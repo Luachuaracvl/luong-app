@@ -132,16 +132,20 @@ Upload lại lên GitHub (hoặc `git push`) → Vercel tự deploy.
 
 ## Sửa lỗi Deploy failed trên Vercel
 
-### Lỗi thường gặp: thiếu ESLint config
+### Lỗi: `npm run build` exited with 1
 
-Nếu GitHub báo **"All checks have failed — Vercel Deployment has failed"**, thường do thiếu file `eslint.config.mjs`.
+**Nguyên nhân thường gặp:** trên GitHub vẫn còn file Prisma cũ (`prisma/`, `src/lib/prisma.ts`) trong khi app đã chuyển Firebase — TypeScript báo lỗi `Cannot find module '@prisma/client'`.
 
-**Cách sửa:** upload lại các file mới nhất lên GitHub, đặc biệt:
-- `eslint.config.mjs` ← **quan trọng**
-- `package.json` + `package-lock.json`
-- **Xóa** thư mục `prisma/` trên GitHub (đã chuyển sang Firebase)
+**Cách sửa trên GitHub:**
 
-Sau đó Vercel → **Redeploy**.
+1. Vào repo → xóa các mục sau:
+   - thư mục `prisma/`
+   - file `src/lib/prisma.ts`
+   - file `tsconfig.tsbuildinfo` (nếu có)
+2. Upload lại file `tsconfig.json` mới nhất từ máy bạn
+3. Vercel → **Redeploy**
+
+**Cách sửa trên Vercel (nếu vẫn lỗi ESLint):** upload thêm `eslint.config.mjs`.
 
 ### Kiểm tra biến môi trường Firebase
 
