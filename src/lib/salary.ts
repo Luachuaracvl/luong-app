@@ -1,11 +1,19 @@
 import { findEmployees } from "@/lib/db/users";
-import { listRevenues } from "@/lib/db/revenues";
 import {
   createSalaryRecord,
   findSalaryRecord,
   findSalaryRecordsByUser,
+  findSalaryRecordsByRevenue,
   getAllSalaryRecords,
+  updateSalaryRecord,
+  deleteSalariesByRevenue,
 } from "@/lib/db/salaries";
+import {
+  deleteRevenue,
+  findRevenueById,
+  listRevenues,
+  upsertRevenue,
+} from "@/lib/db/revenues";
 import {
   groupSalariesByRevenue,
   groupSalariesByUser,
@@ -74,6 +82,50 @@ export async function createSalaryRecordsForRevenue(
   );
 }
 
+export async function recalculateSalariesForRevenue(
+  dailyRevenueId: string,
+  dateKey: string,
+  date: Date,
+  amount: number
+) {
+  const existingSalaries = await findSalaryRecordsByRevenue(dailyRevenueId);
+
+  await Promise.all(
+    existingSalaries.map((record) => {
+      const salaryAmount = calculateSalary(amount, record.percentageUsed);
+      return updateSalaryRecord(record.id, {
+        salaryAmount,
+        revenueAmount: amount,
+      });
+    })
+  );
+
+  await createSalaryRecordsForRevenue(dailyRevenueId, dateKey, date, amount);
+}
+
+export async function updateRevenueWithSalaries(
+  id: string,
+  amount: number,
+  note: string | null
+) {
+  const revenue = await findRevenueById(id);
+  if (!revenue) throw new Error("NOT_FOUND");
+
+  const date = revenue.date.toDate();
+  await upsertRevenue(date, amount, note);
+  await recalculateSalariesForRevenue(id, revenue.dateKey, date, amount);
+
+  return findRevenueById(id);
+}
+
+export async function deleteRevenueWithSalaries(id: string) {
+  const revenue = await findRevenueById(id);
+  if (!revenue) throw new Error("NOT_FOUND");
+
+  await deleteSalariesByRevenue(id);
+  await deleteRevenue(id);
+}
+
 function dateKeyToIso(dateKey: string) {
   const [y, m, d] = dateKey.split("-").map(Number);
   return new Date(y, m - 1, d).toISOString();
@@ -114,11 +166,13 @@ export async function getDailyStats(limit = 30) {
 
   return revenues.map((rev) => {
     const salaries = byRevenue.get(rev.id) ?? [];
+    const totalSalary = sumSalary(salaries);
     return {
       id: rev.id,
       date: rev.date.toDate().toISOString(),
       revenue: rev.amount,
-      totalSalary: sumSalary(salaries),
+      totalSalary,
+      adminNet: rev.amount - totalSalary,
       employeeCount: salaries.length,
     };
   });
@@ -151,18 +205,25 @@ export async function getAdminDashboardData() {
 
   const stats = revenues.map((rev) => {
     const salaries = byRevenue.get(rev.id) ?? [];
+    const totalSalary = sumSalary(salaries);
     return {
       id: rev.id,
       date: rev.date.toDate().toISOString(),
       revenue: rev.amount,
-      totalSalary: sumSalary(salaries),
+      totalSalary,
+      adminNet: rev.amount - totalSalary,
       employeeCount: salaries.length,
+      note: rev.note,
     };
   });
 
+  const totalRevenue = revenues.reduce((sum, r) => sum + r.amount, 0);
+  const totalSalary = sumSalary(allSalaries);
+
   const overview = {
-    totalRevenue: revenues.reduce((sum, r) => sum + r.amount, 0),
-    totalSalary: sumSalary(allSalaries),
+    totalRevenue,
+    totalSalary,
+    adminNetIncome: totalRevenue - totalSalary,
     employeeCount: employees.filter((e) => e.isActive).length,
     revenueDays: revenues.length,
   };

@@ -55,6 +55,22 @@ export async function findSalaryRecordsByRevenue(dailyRevenueId: string) {
   }));
 }
 
+export async function updateSalaryRecord(
+  id: string,
+  data: Partial<Pick<SalaryRecordDoc, "salaryAmount" | "revenueAmount">>
+) {
+  await getDb().collection(COLLECTION).doc(id).update(data);
+}
+
+export async function deleteSalariesByRevenue(dailyRevenueId: string) {
+  const records = await findSalaryRecordsByRevenue(dailyRevenueId);
+  await Promise.all(
+    records.map((record) =>
+      getDb().collection(COLLECTION).doc(record.id).delete()
+    )
+  );
+}
+
 export async function getAllSalaryRecords() {
   const snap = await getDb().collection(COLLECTION).get();
   return snap.docs.map((doc) => ({

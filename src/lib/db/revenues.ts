@@ -5,6 +5,16 @@ import { dateToKey, toDateOnly } from "@/lib/utils";
 
 const COLLECTION = "dailyRevenues";
 
+export async function findRevenueById(id: string) {
+  const doc = await getDb().collection(COLLECTION).doc(id).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, ...(doc.data() as DailyRevenueDoc) };
+}
+
+export async function deleteRevenue(id: string) {
+  await getDb().collection(COLLECTION).doc(id).delete();
+}
+
 export async function findRevenueByDate(date: Date) {
   const dateKey = dateToKey(toDateOnly(date));
   const doc = await getDb().collection(COLLECTION).doc(dateKey).get();

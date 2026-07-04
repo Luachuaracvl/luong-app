@@ -30,7 +30,9 @@ type DayStat = {
   date: string;
   revenue: number;
   totalSalary: number;
+  adminNet: number;
   employeeCount: number;
+  note?: string | null;
 };
 
 type EmployeeDetail = {
@@ -55,6 +57,7 @@ export default function AdminDashboard({ user }: { user: User }) {
   const [overview, setOverview] = useState({
     totalRevenue: 0,
     totalSalary: 0,
+    adminNetIncome: 0,
     employeeCount: 0,
     revenueDays: 0,
   });
@@ -84,6 +87,12 @@ export default function AdminDashboard({ user }: { user: User }) {
   const [profileUser, setProfileUser] = useState<User>(user);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editingRevenue, setEditingRevenue] = useState<{
+    id: string;
+    date: string;
+    amount: string;
+    note: string;
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     const res = await fetch("/api/admin/dashboard");
@@ -239,17 +248,76 @@ export default function AdminDashboard({ user }: { user: User }) {
     setMessage(`Đã đặt lại mật khẩu cho ${selectedEmployee.employee.name}`);
   }
 
+  function startEditRevenue(day: DayStat) {
+    setEditingRevenue({
+      id: day.id,
+      date: day.date,
+      amount: String(day.revenue),
+      note: day.note ?? "",
+    });
+    setMessage("");
+    setError("");
+  }
+
+  async function saveEditRevenue(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingRevenue) return;
+    setMessage("");
+    setError("");
+
+    const res = await fetch(`/api/admin/revenue/${editingRevenue.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount: Number(editingRevenue.amount),
+        note: editingRevenue.note,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Cập nhật thất bại");
+      return;
+    }
+
+    setEditingRevenue(null);
+    setMessage(data.message);
+    await loadData();
+  }
+
+  async function deleteRevenueDay(day: DayStat) {
+    const ok = window.confirm(
+      `Xóa doanh thu ngày ${formatDate(day.date)}?\nLương nhân viên ngày này cũng sẽ bị xóa.`
+    );
+    if (!ok) return;
+
+    setMessage("");
+    setError("");
+
+    const res = await fetch(`/api/admin/revenue/${day.id}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Xóa thất bại");
+      return;
+    }
+
+    setMessage(data.message);
+    await loadData();
+  }
+
   function exportOverviewCsv() {
     const filtered = filterByMonth(
       dayStats.map((d) => ({ ...d, date: d.date })),
       overviewMonth
     );
     downloadCsv("thong-ke-doanh-thu-luong.csv", [
-      ["Ngày", "Doanh thu", "Tổng lương", "Số NV"],
+      ["Ngày", "Doanh thu", "Tổng lương", "Admin thu", "Số NV"],
       ...filtered.map((d) => [
         formatDate(d.date),
         String(d.revenue),
         String(d.totalSalary),
+        String(d.adminNet),
         String(d.employeeCount),
       ]),
     ]);
@@ -306,6 +374,19 @@ export default function AdminDashboard({ user }: { user: User }) {
 
         {tab === "overview" && (
           <div className="space-y-6">
+            <div className="card border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <p className="text-sm font-medium text-blue-800">
+                Tiền admin thu được (doanh thu − lương)
+              </p>
+              <p className="mt-2 text-3xl font-bold text-blue-700">
+                {formatCurrency(overview.adminNetIncome)}
+              </p>
+              <p className="mt-1 text-sm text-blue-600">
+                {formatCurrency(overview.totalRevenue)} doanh thu −{" "}
+                {formatCurrency(overview.totalSalary)} lương
+              </p>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard label="Tổng doanh thu" value={overview.totalRevenue} />
               <StatCard label="Tổng lương đã trả" value={overview.totalSalary} />
@@ -355,7 +436,9 @@ export default function AdminDashboard({ user }: { user: User }) {
                         <th>Ngày</th>
                         <th>Doanh thu</th>
                         <th>Tổng lương</th>
-                        <th>Số NV được tính</th>
+                        <th>Admin thu</th>
+                        <th>Số NV</th>
+                        <th>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -366,7 +449,28 @@ export default function AdminDashboard({ user }: { user: User }) {
                           <td className="font-semibold text-emerald-700">
                             {formatCurrency(d.totalSalary)}
                           </td>
+                          <td className="font-semibold text-blue-700">
+                            {formatCurrency(d.adminNet)}
+                          </td>
                           <td>{d.employeeCount}</td>
+                          <td>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => startEditRevenue(d)}
+                                className="btn btn-secondary px-2 py-1 text-xs"
+                              >
+                                Sửa
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteRevenueDay(d)}
+                                className="btn btn-secondary px-2 py-1 text-xs text-red-600"
+                              >
+                                Xóa
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -445,10 +549,27 @@ export default function AdminDashboard({ user }: { user: User }) {
                     <div>
                       <p className="font-medium">{formatDate(d.date)}</p>
                       <p className="text-sm text-slate-500">
-                        Lương: {formatCurrency(d.totalSalary)}
+                        Lương: {formatCurrency(d.totalSalary)} · Admin:{" "}
+                        {formatCurrency(d.adminNet)}
                       </p>
                     </div>
-                    <p className="font-semibold">{formatCurrency(d.revenue)}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">{formatCurrency(d.revenue)}</p>
+                      <button
+                        type="button"
+                        onClick={() => startEditRevenue(d)}
+                        className="btn btn-secondary px-2 py-1 text-xs"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteRevenueDay(d)}
+                        className="btn btn-secondary px-2 py-1 text-xs text-red-600"
+                      >
+                        Xóa
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -649,6 +770,62 @@ export default function AdminDashboard({ user }: { user: User }) {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {editingRevenue && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <form
+              onSubmit={saveEditRevenue}
+              className="card w-full max-w-md space-y-4"
+            >
+              <h3 className="text-lg font-semibold">Sửa doanh thu</h3>
+              <p className="text-sm text-slate-500">
+                Ngày {formatDate(editingRevenue.date)} — lương sẽ được tính lại
+                theo % đã dùng (% giữ nguyên, chỉ đổi theo doanh thu mới).
+              </p>
+              <div>
+                <label className="label">Doanh thu (VNĐ)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="input"
+                  value={editingRevenue.amount}
+                  onChange={(e) =>
+                    setEditingRevenue({
+                      ...editingRevenue,
+                      amount: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <label className="label">Ghi chú</label>
+                <input
+                  className="input"
+                  value={editingRevenue.note}
+                  onChange={(e) =>
+                    setEditingRevenue({
+                      ...editingRevenue,
+                      note: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="btn btn-primary flex-1">
+                  Lưu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingRevenue(null)}
+                  className="btn btn-secondary flex-1"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
