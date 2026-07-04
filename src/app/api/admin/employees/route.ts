@@ -7,10 +7,8 @@ import {
   userToJson,
 } from "@/lib/db/users";
 import { createPercentageHistory } from "@/lib/db/percentage-history";
-import {
-  countSalaryRecordsByUser,
-  findSalaryRecordsByUser,
-} from "@/lib/db/salaries";
+import { getAllSalaryRecords } from "@/lib/db/salaries";
+import { groupSalariesByUser, sumSalary } from "@/lib/db/salary-aggregates";
 import { requireSession } from "@/lib/auth";
 import { toDateOnly } from "@/lib/utils";
 
@@ -18,24 +16,25 @@ export async function GET() {
   try {
     await requireSession(["ADMIN"]);
 
-    const employees = await findEmployees();
+    const [employees, allSalaries] = await Promise.all([
+      findEmployees(),
+      getAllSalaryRecords(),
+    ]);
+    const byUser = groupSalariesByUser(allSalaries);
 
-    const result = await Promise.all(
-      employees.map(async (e) => {
-        const salaryRecords = await findSalaryRecordsByUser(e.id);
-        const recordCount = await countSalaryRecordsByUser(e.id);
-        return {
-          id: e.id,
-          username: e.username,
-          name: e.name,
-          salaryPercentage: e.salaryPercentage,
-          isActive: e.isActive,
-          totalSalary: salaryRecords.reduce((s, r) => s + r.salaryAmount, 0),
-          recordCount,
-          createdAt: e.createdAt?.toDate?.()?.toISOString() ?? null,
-        };
-      })
-    );
+    const result = employees.map((e) => {
+      const records = byUser.get(e.id) ?? [];
+      return {
+        id: e.id,
+        username: e.username,
+        name: e.name,
+        salaryPercentage: e.salaryPercentage,
+        isActive: e.isActive,
+        totalSalary: sumSalary(records),
+        recordCount: records.length,
+        createdAt: e.createdAt?.toDate?.()?.toISOString() ?? null,
+      };
+    });
 
     return NextResponse.json({ employees: result });
   } catch (error) {

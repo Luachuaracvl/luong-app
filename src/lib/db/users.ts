@@ -51,6 +51,7 @@ export async function createUser(data: {
       role: data.role,
       salaryPercentage: data.salaryPercentage,
       isActive: true,
+      avatarUrl: null,
       createdAt: now,
       updatedAt: now,
     });
@@ -62,7 +63,10 @@ export async function createUser(data: {
 export async function updateUser(
   id: string,
   data: Partial<
-    Pick<UserDoc, "name" | "isActive" | "salaryPercentage" | "passwordHash">
+    Pick<
+      UserDoc,
+      "name" | "isActive" | "salaryPercentage" | "passwordHash" | "avatarUrl"
+    >
   >
 ) {
   await getDb()
@@ -106,6 +110,7 @@ export function userToJson(user: UserDoc & { id: string }) {
     role: user.role,
     salaryPercentage: user.salaryPercentage,
     isActive: user.isActive,
+    avatarUrl: user.avatarUrl ?? null,
     createdAt: user.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
   };
 }

@@ -9,6 +9,7 @@ export type UserDoc = {
   role: Role;
   salaryPercentage: number;
   isActive: boolean;
+  avatarUrl?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
@@ -28,6 +29,7 @@ export type SalaryRecordDoc = {
   dateKey: string;
   percentageUsed: number;
   salaryAmount: number;
+  revenueAmount?: number;
   createdAt: Timestamp;
 };
 

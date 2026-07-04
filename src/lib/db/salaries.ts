@@ -17,6 +17,7 @@ export async function createSalaryRecord(data: {
   dateKey: string;
   percentageUsed: number;
   salaryAmount: number;
+  revenueAmount?: number;
 }) {
   const docId = `${data.userId}_${data.dailyRevenueId}`;
   const ref = getDb().collection(COLLECTION).doc(docId);

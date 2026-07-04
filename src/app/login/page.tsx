@@ -91,10 +91,6 @@ export default function LoginPage() {
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
-
-        <p className="mt-6 text-center text-xs text-slate-400">
-          Admin mặc định: admin / admin123
-        </p>
       </div>
     </div>
   );

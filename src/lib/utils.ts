@@ -46,3 +46,32 @@ export function dateToInputValue(date: Date): string {
 export function calculateSalary(revenue: number, percentage: number): number {
   return Math.round((revenue * percentage) / 100);
 }
+
+export function monthKeyFromDate(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+export function formatMonthLabel(monthKey: string): string {
+  const [y, m] = monthKey.split("-");
+  return `Tháng ${m}/${y}`;
+}
+
+export function downloadCsv(filename: string, rows: string[][]) {
+  const csv = rows
+    .map((row) =>
+      row
+        .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+        .join(",")
+    )
+    .join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

@@ -2,14 +2,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AppHeader } from "./AppHeader";
+import { ProfilePanel } from "./ProfilePanel";
+import { MonthFilter, filterByMonth, getMonthOptions } from "./MonthFilter";
 import { SalaryTable } from "./SalaryTable";
 import { StatCard } from "./StatCard";
-import { dateToInputValue, formatCurrency, formatDate } from "@/lib/utils";
+import { dateToInputValue, downloadCsv, formatCurrency, formatDate } from "@/lib/utils";
 
 type User = {
   id: string;
   name: string;
   role: "ADMIN" | "EMPLOYEE";
+  username?: string;
+  avatarUrl?: string | null;
 };
 
 type Employee = {
@@ -44,7 +48,7 @@ type EmployeeDetail = {
   totalRevenue: number;
 };
 
-type Tab = "overview" | "revenue" | "employees";
+type Tab = "overview" | "revenue" | "employees" | "profile";
 
 export default function AdminDashboard({ user }: { user: User }) {
   const [tab, setTab] = useState<Tab>("overview");
@@ -74,28 +78,38 @@ export default function AdminDashboard({ user }: { user: User }) {
   });
 
   const [editPercentage, setEditPercentage] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [overviewMonth, setOverviewMonth] = useState("all");
+  const [employeeMonth, setEmployeeMonth] = useState("all");
+  const [profileUser, setProfileUser] = useState<User>(user);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const [statsRes, revenueRes, employeesRes] = await Promise.all([
-      fetch("/api/admin/stats"),
-      fetch("/api/admin/revenue"),
-      fetch("/api/admin/employees"),
-    ]);
-
-    if (statsRes.ok) setOverview(await statsRes.json());
-    if (revenueRes.ok) {
-      const data = await revenueRes.json();
-      setDayStats(data.stats);
-    }
-    if (employeesRes.ok) {
-      const data = await employeesRes.json();
-      setEmployees(data.employees);
-    }
+    const res = await fetch("/api/admin/dashboard");
+    if (!res.ok) return;
+    const data = await res.json();
+    setOverview(data.overview);
+    setDayStats(data.stats);
+    setEmployees(data.employees);
   }, []);
 
   useEffect(() => {
-    loadData();
+    loadData().finally(() => setLoading(false));
   }, [loadData]);
+
+  useEffect(() => {
+    if (tab !== "profile" || profileLoaded) return;
+    fetch("/api/profile")
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          setProfileUser((prev) => ({ ...prev, ...data.user }));
+          setProfileLoaded(true);
+        }
+      })
+      .catch(() => {});
+  }, [tab, profileLoaded]);
 
   async function submitRevenue(e: React.FormEvent) {
     e.preventDefault();
@@ -197,15 +211,68 @@ export default function AdminDashboard({ user }: { user: User }) {
     await loadData();
   }
 
+  async function resetEmployeePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedEmployee || !resetPassword) return;
+    setMessage("");
+    setError("");
+
+    if (resetPassword.length < 6) {
+      setError("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    const res = await fetch(
+      `/api/admin/employees/${selectedEmployee.employee.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: resetPassword }),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Không thể đổi mật khẩu");
+      return;
+    }
+    setResetPassword("");
+    setMessage(`Đã đặt lại mật khẩu cho ${selectedEmployee.employee.name}`);
+  }
+
+  function exportOverviewCsv() {
+    const filtered = filterByMonth(
+      dayStats.map((d) => ({ ...d, date: d.date })),
+      overviewMonth
+    );
+    downloadCsv("thong-ke-doanh-thu-luong.csv", [
+      ["Ngày", "Doanh thu", "Tổng lương", "Số NV"],
+      ...filtered.map((d) => [
+        formatDate(d.date),
+        String(d.revenue),
+        String(d.totalSalary),
+        String(d.employeeCount),
+      ]),
+    ]);
+  }
+
+  const filteredDayStats = filterByMonth(dayStats, overviewMonth);
+  const filteredEmployeeRecords = selectedEmployee
+    ? filterByMonth(selectedEmployee.records, employeeMonth)
+    : [];
+
   const tabs: { id: Tab; label: string }[] = [
     { id: "overview", label: "Tổng quan" },
     { id: "revenue", label: "Cập nhật doanh thu" },
     { id: "employees", label: "Nhân viên" },
+    { id: "profile", label: "Hồ sơ" },
   ];
 
   return (
     <div className="min-h-screen">
-      <AppHeader user={user} />
+      <AppHeader
+        user={profileUser}
+        onOpenProfile={() => setTab("profile")}
+      />
 
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6 flex flex-wrap gap-2">
@@ -221,6 +288,10 @@ export default function AdminDashboard({ user }: { user: User }) {
             </button>
           ))}
         </div>
+
+        {loading && tab === "overview" && (
+          <div className="card mb-4 text-center text-slate-500">Đang tải dữ liệu...</div>
+        )}
 
         {message && (
           <p className="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -252,10 +323,27 @@ export default function AdminDashboard({ user }: { user: User }) {
             </div>
 
             <div>
-              <h2 className="mb-4 text-lg font-semibold">
-                Thống kê doanh thu & lương theo ngày
-              </h2>
-              {dayStats.length === 0 ? (
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">
+                  Thống kê doanh thu & lương theo ngày
+                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <MonthFilter
+                    value={overviewMonth}
+                    onChange={setOverviewMonth}
+                    options={getMonthOptions(dayStats.map((d) => d.date))}
+                  />
+                  <button
+                    type="button"
+                    onClick={exportOverviewCsv}
+                    className="btn btn-secondary"
+                    disabled={filteredDayStats.length === 0}
+                  >
+                    Xuất CSV
+                  </button>
+                </div>
+              </div>
+              {filteredDayStats.length === 0 ? (
                 <div className="card text-slate-500">
                   Chưa có dữ liệu doanh thu.
                 </div>
@@ -271,7 +359,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {dayStats.map((d) => (
+                      {filteredDayStats.map((d) => (
                         <tr key={d.id}>
                           <td>{formatDate(d.date)}</td>
                           <td>{formatCurrency(d.revenue)}</td>
@@ -518,11 +606,41 @@ export default function AdminDashboard({ user }: { user: User }) {
                         Cập nhật
                       </button>
                     </form>
+
+                    <form
+                      onSubmit={resetEmployeePassword}
+                      className="mt-4 flex gap-3 border-t border-slate-100 pt-4"
+                    >
+                      <div className="flex-1">
+                        <label className="label">
+                          Đặt lại mật khẩu nhân viên
+                        </label>
+                        <input
+                          type="password"
+                          className="input"
+                          value={resetPassword}
+                          onChange={(e) => setResetPassword(e.target.value)}
+                          placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                        />
+                      </div>
+                      <button type="submit" className="btn btn-secondary self-end">
+                        Đặt lại MK
+                      </button>
+                    </form>
                   </div>
 
                   <div>
-                    <h3 className="mb-3 font-semibold">Lương theo ngày</h3>
-                    <SalaryTable records={selectedEmployee.records} />
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="font-semibold">Lương theo ngày</h3>
+                      <MonthFilter
+                        value={employeeMonth}
+                        onChange={setEmployeeMonth}
+                        options={getMonthOptions(
+                          selectedEmployee.records.map((r) => r.date)
+                        )}
+                      />
+                    </div>
+                    <SalaryTable records={filteredEmployeeRecords} />
                   </div>
                 </>
               ) : (
@@ -532,6 +650,26 @@ export default function AdminDashboard({ user }: { user: User }) {
               )}
             </div>
           </div>
+        )}
+
+        {tab === "profile" && (
+          <ProfilePanel
+            user={{
+              id: profileUser.id,
+              username: profileUser.username ?? "admin",
+              name: profileUser.name,
+              role: profileUser.role,
+              avatarUrl: profileUser.avatarUrl,
+            }}
+            onUpdated={(p) => {
+              setProfileUser((prev) => ({
+                ...prev,
+                name: p.name,
+                avatarUrl: p.avatarUrl,
+              }));
+              setProfileLoaded(true);
+            }}
+          />
         )}
       </main>
     </div>
