@@ -1,93 +1,129 @@
-# Deploy lên Vercel
+# Deploy lên Vercel + Firebase Firestore
 
-App cần **PostgreSQL** (Neon miễn phí). SQLite không dùng được trên Vercel.
-
-## Bước 1: Tạo database Neon
-
-1. Vào **https://neon.tech** → đăng ký miễn phí
-2. **New Project** → đặt tên (vd: `luong-app`)
-3. Copy **Connection string** (PostgreSQL) — dạng:
-   `postgresql://user:pass@ep-xxx.region.aws.neon.tech/neondb?sslmode=require`
-
-## Bước 2: Tạo tài khoản Vercel
-
-1. Vào **https://vercel.com** → đăng ký (có thể dùng GitHub)
-2. Cài Git nếu chưa có: **https://git-scm.com/download/win**
-
-## Bước 3: Đưa code lên GitHub
-
-Mở PowerShell trong thư mục project:
-
-```powershell
-cd "d:\download\backup\newest re\bACKUP\Lương"
-git init
-git add .
-git commit -m "Initial commit - app quan ly luong"
-```
-
-Tạo repo mới trên **https://github.com/new** (tên vd: `luong-app`), rồi:
-
-```powershell
-git branch -M main
-git remote add origin https://github.com/TEN-GITHUB-CUA-BAN/luong-app.git
-git push -u origin main
-```
-
-## Bước 4: Import project trên Vercel
-
-1. Vercel → **Add New** → **Project**
-2. Import repo GitHub vừa push
-3. **Environment Variables** — thêm:
-
-| Tên | Giá trị |
-|-----|---------|
-| `DATABASE_URL` | Connection string Neon (bước 1) |
-| `JWT_SECRET` | Chuỗi bí mật dài (vd: `my-super-secret-key-2026`) |
-
-4. **Deploy**
-
-Lần build đầu sẽ tự tạo bảng DB và tài khoản admin.
-
-## Bước 5: Gửi link cho nhân viên
-
-Sau deploy, Vercel cho link kiểu:
-
-`https://luong-app-xxx.vercel.app`
-
-- **Admin:** `admin` / `admin123` (đổi mật khẩu sau khi vào được)
-- Tạo tài khoản nhân viên trong app → gửi link + username/mật khẩu
+App dùng **Firebase Firestore** làm database (không còn Neon/PostgreSQL).
 
 ---
 
-## Cách deploy nhanh không cần GitHub (Vercel CLI)
+## PHẦN A: Tạo Firebase & lấy credentials
 
-```powershell
-cd "d:\download\backup\newest re\bACKUP\Lương"
-npm i -g vercel
-vercel login
-vercel
-```
+### A1. Tạo project Firebase
 
-Lần đầu hỏi project name → Enter. Sau đó thêm biến môi trường trên **Vercel Dashboard → Project → Settings → Environment Variables**, rồi:
+1. Vào **https://console.firebase.google.com**
+2. **Add project** → đặt tên (vd: `luong-app`)
+3. Google Analytics: bật/tắt tuỳ ý → **Create project**
 
-```powershell
-vercel --prod
+### A2. Bật Firestore
+
+1. Menu trái → **Build → Firestore Database**
+2. **Create database**
+3. Chọn **Production mode** (app dùng Admin SDK, rules mặc định chặn client — OK)
+4. Location: chọn **asia-southeast1 (Singapore)** hoặc gần VN nhất
+5. **Enable**
+
+### A3. Tạo Service Account (cho server/Vercel)
+
+1. Bấm **⚙ Project settings** (góc trái)
+2. Tab **Service accounts**
+3. **Generate new private key** → **Generate key**
+4. Tải file JSON (vd: `luong-app-firebase-adminsdk.json`) — **giữ bí mật, không commit lên GitHub**
+
+File JSON có dạng:
+```json
+{
+  "type": "service_account",
+  "project_id": "luong-app-xxxxx",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...",
+  "client_email": "firebase-adminsdk-xxx@luong-app-xxxxx.iam.gserviceaccount.com"
+}
 ```
 
 ---
 
-## Cập nhật code sau này
+## PHẦN B: Gắn Firebase vào Vercel
 
+1. Vercel → project `luong-app` → **Settings → Environment Variables**
+2. **Xóa** biến `DATABASE_URL` cũ (Neon) nếu còn
+3. Thêm các biến sau:
+
+### Cách 1 — khuyến nghị (1 biến duy nhất)
+
+| Key | Value |
+|-----|-------|
+| `FIREBASE_SERVICE_ACCOUNT` | Dán **nguyên nội dung file JSON** (1 dòng) |
+| `JWT_SECRET` | Chuỗi bí mật, vd: `LuongApp2026BiMat` |
+
+### Cách 2 — tách 3 biến
+
+| Key | Value |
+|-----|-------|
+| `FIREBASE_PROJECT_ID` | `project_id` trong JSON |
+| `FIREBASE_CLIENT_EMAIL` | `client_email` trong JSON |
+| `FIREBASE_PRIVATE_KEY` | `private_key` trong JSON (giữ `\n`) |
+| `JWT_SECRET` | Chuỗi bí mật |
+
+Tick **Production**, **Preview**, **Development** → **Save**
+
+4. **Deployments → Redeploy** (hoặc push code mới lên GitHub)
+
+---
+
+## PHẦN C: Khởi tạo admin lần đầu
+
+Sau deploy thành công, chọn **một** cách:
+
+**Cách 1:** Mở app → trang login → đăng nhập `admin` / `admin123`  
+(App tự tạo admin lần đầu khi login)
+
+**Cách 2:** Mở trình duyệt:
+```
+https://TEN-APP.vercel.app/api/setup/seed
+```
+(phải là POST — dùng extension REST client hoặc curl)
+
+**Cách 3:** Local:
 ```powershell
-git add .
-git commit -m "Mo ta thay doi"
-git push
+npm run db:seed
 ```
 
-Vercel tự deploy lại khi push lên GitHub.
+---
+
+## PHẦN D: Xem data trên Firebase
+
+1. **https://console.firebase.google.com** → chọn project
+2. **Firestore Database → Data**
+
+Collections app tạo:
+
+| Collection | Nội dung |
+|------------|----------|
+| `users` | Admin + nhân viên |
+| `dailyRevenues` | Doanh thu theo ngày (doc id = `2026-07-04`) |
+| `salaryRecords` | Lương đã tính |
+| `percentageHistory` | Lịch sử đổi % lương |
+
+---
+
+## PHẦN E: Deploy code mới
+
+Upload lại lên GitHub (hoặc `git push`) → Vercel tự deploy.
+
+---
+
+## Chạy local
+
+1. Copy `.env.example` → `.env`
+2. Dán credentials Firebase
+3. ```powershell
+   npm install
+   npm run db:seed
+   npm run dev
+   ```
+
+---
 
 ## Lưu ý
 
-- Dữ liệu local (file `dev.db` cũ) **không** tự chuyển lên Neon — trên Vercel là database mới, tạo lại nhân viên hoặc nhập lại doanh thu
-- Nếu build lỗi DB: kiểm tra `DATABASE_URL` có `?sslmode=require` ở cuối
-- Đổi `JWT_SECRET` trên production, không dùng giá trị mặc định
+- Dữ liệu trên **Neon cũ không tự chuyển** sang Firebase — cần tạo lại nhân viên / nhập lại doanh thu
+- **Không commit** file JSON service account lên GitHub
+- Firebase **Spark (free)** đủ cho app quản lý lương nhỏ
+- Mật khẩu user trong Firestore là `passwordHash` (đã mã hóa), không xem được mật khẩu gốc

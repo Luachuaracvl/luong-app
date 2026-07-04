@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/lib/types";
 
 export type SessionUser = {
   id: string;

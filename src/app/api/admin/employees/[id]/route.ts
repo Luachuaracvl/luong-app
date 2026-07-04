@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import { findUserById, updateUser } from "@/lib/db/users";
+import { findPercentageHistoryByUser, createPercentageHistory } from "@/lib/db/percentage-history";
 import { requireSession } from "@/lib/auth";
 import { getEmployeeSalarySummary } from "@/lib/salary";
 import { toDateOnly } from "@/lib/utils";
@@ -12,20 +13,16 @@ export async function GET(_request: Request, { params }: Params) {
     await requireSession(["ADMIN"]);
     const { id } = await params;
 
-    const employee = await prisma.user.findFirst({
-      where: { id, role: "EMPLOYEE" },
-      include: {
-        percentageHistory: { orderBy: { effectiveFrom: "desc" } },
-      },
-    });
+    const employee = await findUserById(id);
 
-    if (!employee) {
+    if (!employee || employee.role !== "EMPLOYEE") {
       return NextResponse.json(
         { error: "Không tìm thấy nhân viên" },
         { status: 404 }
       );
     }
 
+    const percentageHistory = await findPercentageHistoryByUser(id);
     const summary = await getEmployeeSalarySummary(id);
 
     return NextResponse.json({
@@ -35,7 +32,11 @@ export async function GET(_request: Request, { params }: Params) {
         name: employee.name,
         salaryPercentage: employee.salaryPercentage,
         isActive: employee.isActive,
-        percentageHistory: employee.percentageHistory,
+        percentageHistory: percentageHistory.map((h) => ({
+          id: h.id,
+          percentage: h.percentage,
+          effectiveFrom: h.effectiveFrom.toDate().toISOString(),
+        })),
       },
       ...summary,
     });
@@ -56,29 +57,27 @@ export async function PATCH(request: Request, { params }: Params) {
     const { id } = await params;
     const body = await request.json();
 
-    const employee = await prisma.user.findFirst({
-      where: { id, role: "EMPLOYEE" },
-    });
+    const employee = await findUserById(id);
 
-    if (!employee) {
+    if (!employee || employee.role !== "EMPLOYEE") {
       return NextResponse.json(
         { error: "Không tìm thấy nhân viên" },
         { status: 404 }
       );
     }
 
-    const data: {
+    const updates: {
       name?: string;
       isActive?: boolean;
       salaryPercentage?: number;
       passwordHash?: string;
     } = {};
 
-    if (body.name?.trim()) data.name = body.name.trim();
-    if (typeof body.isActive === "boolean") data.isActive = body.isActive;
+    if (body.name?.trim()) updates.name = body.name.trim();
+    if (typeof body.isActive === "boolean") updates.isActive = body.isActive;
 
     if (body.password) {
-      data.passwordHash = await bcrypt.hash(body.password, 10);
+      updates.passwordHash = await bcrypt.hash(body.password, 10);
     }
 
     if (body.salaryPercentage !== undefined) {
@@ -91,30 +90,19 @@ export async function PATCH(request: Request, { params }: Params) {
       }
 
       if (pct !== employee.salaryPercentage) {
-        data.salaryPercentage = pct;
-        const today = toDateOnly(new Date());
-
-        await prisma.percentageHistory.create({
-          data: {
-            userId: id,
-            percentage: pct,
-            effectiveFrom: today,
-          },
-        });
+        updates.salaryPercentage = pct;
+        await createPercentageHistory(id, pct, toDateOnly(new Date()));
       }
     }
 
-    const updated = await prisma.user.update({
-      where: { id },
-      data,
-    });
+    const updated = await updateUser(id, updates);
 
     return NextResponse.json({
       employee: {
-        id: updated.id,
-        name: updated.name,
-        salaryPercentage: updated.salaryPercentage,
-        isActive: updated.isActive,
+        id: updated?.id,
+        name: updated?.name,
+        salaryPercentage: updated?.salaryPercentage,
+        isActive: updated?.isActive,
       },
     });
   } catch (error) {

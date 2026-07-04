@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import {
+  createUser,
+  findEmployees,
+  findUserByUsername,
+  userToJson,
+} from "@/lib/db/users";
+import { createPercentageHistory } from "@/lib/db/percentage-history";
+import {
+  countSalaryRecordsByUser,
+  findSalaryRecordsByUser,
+} from "@/lib/db/salaries";
 import { requireSession } from "@/lib/auth";
 import { toDateOnly } from "@/lib/utils";
 
@@ -8,29 +18,26 @@ export async function GET() {
   try {
     await requireSession(["ADMIN"]);
 
-    const employees = await prisma.user.findMany({
-      where: { role: "EMPLOYEE" },
-      orderBy: { createdAt: "desc" },
-      include: {
-        _count: { select: { salaryRecords: true } },
-        salaryRecords: {
-          select: { salaryAmount: true },
-        },
-      },
-    });
+    const employees = await findEmployees();
 
-    return NextResponse.json({
-      employees: employees.map((e) => ({
-        id: e.id,
-        username: e.username,
-        name: e.name,
-        salaryPercentage: e.salaryPercentage,
-        isActive: e.isActive,
-        totalSalary: e.salaryRecords.reduce((s, r) => s + r.salaryAmount, 0),
-        recordCount: e._count.salaryRecords,
-        createdAt: e.createdAt,
-      })),
-    });
+    const result = await Promise.all(
+      employees.map(async (e) => {
+        const salaryRecords = await findSalaryRecordsByUser(e.id);
+        const recordCount = await countSalaryRecordsByUser(e.id);
+        return {
+          id: e.id,
+          username: e.username,
+          name: e.name,
+          salaryPercentage: e.salaryPercentage,
+          isActive: e.isActive,
+          totalSalary: salaryRecords.reduce((s, r) => s + r.salaryAmount, 0),
+          recordCount,
+          createdAt: e.createdAt?.toDate?.()?.toISOString() ?? null,
+        };
+      })
+    );
+
+    return NextResponse.json({ employees: result });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
@@ -63,9 +70,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const existing = await prisma.user.findUnique({
-      where: { username: username.trim() },
-    });
+    const existing = await findUserByUsername(username.trim());
     if (existing) {
       return NextResponse.json(
         { error: "Tên đăng nhập đã tồn tại" },
@@ -76,29 +81,18 @@ export async function POST(request: Request) {
     const passwordHash = await bcrypt.hash(password, 10);
     const today = toDateOnly(new Date());
 
-    const employee = await prisma.user.create({
-      data: {
-        username: username.trim(),
-        passwordHash,
-        name: name.trim(),
-        role: "EMPLOYEE",
-        salaryPercentage: pct,
-        percentageHistory: {
-          create: {
-            percentage: pct,
-            effectiveFrom: today,
-          },
-        },
-      },
+    const employee = await createUser({
+      username: username.trim(),
+      passwordHash,
+      name: name.trim(),
+      role: "EMPLOYEE",
+      salaryPercentage: pct,
     });
 
+    await createPercentageHistory(employee.id, pct, today);
+
     return NextResponse.json({
-      employee: {
-        id: employee.id,
-        username: employee.username,
-        name: employee.name,
-        salaryPercentage: employee.salaryPercentage,
-      },
+      employee: userToJson(employee),
     });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {

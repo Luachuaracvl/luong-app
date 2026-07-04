@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import {
+  findRevenueByDate,
+  upsertRevenue,
+  revenueToJson,
+} from "@/lib/db/revenues";
+import { findSalaryRecordsByRevenue } from "@/lib/db/salaries";
 import { requireSession } from "@/lib/auth";
 import {
   createSalaryRecordsForRevenue,
   getDailyStats,
   parseDateInput,
 } from "@/lib/salary";
+import { dateToKey } from "@/lib/utils";
 
 export async function GET() {
   try {
@@ -45,51 +51,45 @@ export async function POST(request: Request) {
     }
 
     const revenueDate = parseDateInput(date);
+    const dateKey = dateToKey(revenueDate);
+    const existing = await findRevenueByDate(revenueDate);
 
-    const existing = await prisma.dailyRevenue.findUnique({
-      where: { date: revenueDate },
-      include: { salaries: true },
-    });
+    if (existing) {
+      const salaries = await findSalaryRecordsByRevenue(existing.id);
 
-    if (existing && existing.salaries.length > 0) {
-      const updated = await prisma.dailyRevenue.update({
-        where: { id: existing.id },
-        data: {
-          amount: revenueAmount,
-          note: note?.trim() || null,
-        },
-      });
+      if (salaries.length > 0) {
+        const updated = await upsertRevenue(
+          revenueDate,
+          revenueAmount,
+          note?.trim() || null
+        );
 
-      return NextResponse.json({
-        revenue: updated,
-        message:
-          "Doanh thu đã cập nhật. Lương đã tính trước đó không thay đổi.",
-        salariesLocked: true,
-      });
+        return NextResponse.json({
+          revenue: revenueToJson(updated),
+          message:
+            "Doanh thu đã cập nhật. Lương đã tính trước đó không thay đổi.",
+          salariesLocked: true,
+        });
+      }
     }
 
-    const revenue = existing
-      ? await prisma.dailyRevenue.update({
-          where: { id: existing.id },
-          data: {
-            amount: revenueAmount,
-            note: note?.trim() || null,
-          },
-        })
-      : await prisma.dailyRevenue.create({
-          data: {
-            date: revenueDate,
-            amount: revenueAmount,
-            note: note?.trim() || null,
-          },
-        });
+    const revenue = await upsertRevenue(
+      revenueDate,
+      revenueAmount,
+      note?.trim() || null
+    );
 
-    await createSalaryRecordsForRevenue(revenue.id, revenueDate, revenueAmount);
+    await createSalaryRecordsForRevenue(
+      revenue.id,
+      dateKey,
+      revenueDate,
+      revenueAmount
+    );
 
     const stats = await getDailyStats(1);
 
     return NextResponse.json({
-      revenue,
+      revenue: revenueToJson(revenue),
       message: "Đã cập nhật doanh thu và tính lương cho nhân viên",
       dayStat: stats[0] ?? null,
     });

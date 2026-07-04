@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import { findUserByUsername } from "@/lib/db/users";
 import { createSession, setSessionCookie } from "@/lib/auth";
+import { seedAdminIfNeeded } from "@/lib/seed";
 
 export async function POST(request: Request) {
   try {
+    await seedAdminIfNeeded();
+
     const { username, password } = await request.json();
 
     if (!username || !password) {
@@ -14,9 +17,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { username: username.trim() },
-    });
+    const user = await findUserByUsername(username.trim());
 
     if (!user || !user.isActive) {
       return NextResponse.json(

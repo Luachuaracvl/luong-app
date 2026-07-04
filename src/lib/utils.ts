@@ -32,11 +32,15 @@ export function parseDateInput(value: string): Date {
   return new Date(year, month - 1, day, 0, 0, 0, 0);
 }
 
-export function dateToInputValue(date: Date): string {
+export function dateToKey(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+export function dateToInputValue(date: Date): string {
+  return dateToKey(date);
 }
 
 export function calculateSalary(revenue: number, percentage: number): number {

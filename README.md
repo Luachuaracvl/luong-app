@@ -17,19 +17,18 @@ Công cụ web giúp admin cập nhật doanh thu hàng ngày và tính lương 
 
 ## Cài đặt & chạy local
 
-Cần database PostgreSQL (khuyến nghị [Neon](https://neon.tech) miễn phí).
+Cần project **Firebase Firestore** (miễn phí). Xem hướng dẫn tạo trong **[DEPLOY.md](./DEPLOY.md)**.
 
 ```bash
 cp .env.example .env
-# Sửa DATABASE_URL và JWT_SECRET trong .env
+# Dán FIREBASE_SERVICE_ACCOUNT hoặc 3 biến Firebase + JWT_SECRET
 
 npm install
-npm run db:push
 npm run db:seed
 npm run dev
 ```
 
-Deploy lên Vercel: xem **[DEPLOY.md](./DEPLOY.md)**.
+Deploy lên Vercel + Firebase: xem **[DEPLOY.md](./DEPLOY.md)**.
 
 Mở trình duyệt: **http://localhost:3000**
 
@@ -51,5 +50,5 @@ Mở trình duyệt: **http://localhost:3000**
 ## Công nghệ
 
 - Next.js 15 + TypeScript
-- SQLite + Prisma
+- Firebase Firestore
 - Tailwind CSS
