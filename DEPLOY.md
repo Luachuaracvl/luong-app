@@ -127,3 +127,32 @@ Upload lại lên GitHub (hoặc `git push`) → Vercel tự deploy.
 - **Không commit** file JSON service account lên GitHub
 - Firebase **Spark (free)** đủ cho app quản lý lương nhỏ
 - Mật khẩu user trong Firestore là `passwordHash` (đã mã hóa), không xem được mật khẩu gốc
+
+---
+
+## Sửa lỗi Deploy failed trên Vercel
+
+### Lỗi thường gặp: thiếu ESLint config
+
+Nếu GitHub báo **"All checks have failed — Vercel Deployment has failed"**, thường do thiếu file `eslint.config.mjs`.
+
+**Cách sửa:** upload lại các file mới nhất lên GitHub, đặc biệt:
+- `eslint.config.mjs` ← **quan trọng**
+- `package.json` + `package-lock.json`
+- **Xóa** thư mục `prisma/` trên GitHub (đã chuyển sang Firebase)
+
+Sau đó Vercel → **Redeploy**.
+
+### Kiểm tra biến môi trường Firebase
+
+Trên Vercel phải có **một trong hai**:
+
+- `FIREBASE_SERVICE_ACCOUNT` (JSON đầy đủ), **hoặc**
+- `FIREBASE_PROJECT_ID` + `FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`
+
+Và `JWT_SECRET`. **Xóa** `DATABASE_URL` cũ (Neon) nếu còn.
+
+### Sau deploy thành công
+
+Mở: `https://TEN-APP.vercel.app/api/setup/seed`  
+Rồi đăng nhập `admin` / `admin123`

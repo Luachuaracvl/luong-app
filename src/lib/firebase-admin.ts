@@ -7,10 +7,16 @@ function initFirebase() {
   }
 
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    return initializeApp({
-      credential: cert(serviceAccount),
-    });
+    try {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      return initializeApp({
+        credential: cert(serviceAccount),
+      });
+    } catch {
+      throw new Error(
+        "FIREBASE_SERVICE_ACCOUNT không hợp lệ. Kiểm tra JSON trên Vercel Environment Variables."
+      );
+    }
   }
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
