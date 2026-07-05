@@ -17,7 +17,7 @@ export function SyncIndicator({
     >
       {syncing ? (
         <>
-          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-zinc-300" />
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-violet-light" />
           Đang đồng bộ...
         </>
       ) : (

@@ -247,7 +247,7 @@ export function ProfilePanel({
             type="button"
             disabled={loading}
             onClick={() => fileRef.current?.click()}
-            className="group relative rounded-full ring-4 ring-zinc-700 transition hover:ring-zinc-500"
+            className="group relative rounded-full ring-4 ring-[var(--border-strong)] transition hover:ring-[var(--violet)]"
             title="Bấm để đổi avatar"
           >
             <UserAvatar name={profile.name} avatarUrl={profile.avatarUrl} userId={profile.id} size="lg" />

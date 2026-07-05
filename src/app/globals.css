@@ -579,7 +579,8 @@ table.data-table tr:last-child td {
   padding-top: max(2rem, env(safe-area-inset-top, 0px));
   padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
   background:
-    radial-gradient(circle at 50% -10%, rgba(255, 255, 255, 0.04), transparent 45%),
+    radial-gradient(ellipse 80% 50% at 50% -20%, var(--violet-soft), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, var(--cyan-soft), transparent),
     var(--bg);
 }
 
@@ -807,4 +808,84 @@ body.chat-keyboard-open .chat-input-bar {
 
 .section-header-compact .section-desc {
   @apply hidden sm:block;
+}
+
+/* Shared UI patterns */
+.notice-warning {
+  @apply rounded-[var(--radius-md)] p-4;
+  background: var(--amber-soft);
+  border: 1px solid rgba(251, 191, 36, 0.22);
+}
+
+.notice-warning .notice-title {
+  @apply font-semibold;
+  color: var(--warning);
+}
+
+.notice-warning .notice-desc {
+  @apply mt-1 text-sm;
+  color: var(--text-muted);
+}
+
+.sidebar-user-card {
+  @apply mb-2 flex items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5;
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+}
+
+.list-row {
+  @apply flex flex-col gap-3 rounded-[var(--radius-md)] px-4 py-3 transition sm:flex-row sm:items-center sm:justify-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.list-row-btn {
+  @apply flex w-full flex-col gap-2 rounded-[var(--radius-md)] border px-4 py-3 text-left transition sm:flex-row sm:items-center sm:gap-3;
+  background: var(--surface);
+  border-color: var(--border);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.list-row-btn:active {
+  background: var(--accent-soft);
+}
+
+.list-row-btn-active {
+  background: var(--violet-soft);
+  border-color: rgba(139, 92, 246, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.15);
+}
+
+.divider-section {
+  border-top: 1px solid var(--border);
+}
+
+.status-dot-online {
+  @apply h-2 w-2 rounded-full;
+  background: var(--emerald);
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.45);
+}
+
+.status-dot-offline {
+  @apply h-2 w-2 rounded-full;
+  background: var(--text-subtle);
+}
+
+.summary-month-card {
+  @apply rounded-[var(--radius-md)] p-4;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.summary-month-card-emerald {
+  border-color: rgba(52, 211, 153, 0.2);
+  background: linear-gradient(145deg, var(--emerald-soft) 0%, var(--surface) 55%);
+}
+
+.hero-stat-emerald .hero-stat-label {
+  color: var(--emerald);
+}
+
+.hero-stat-emerald .hero-stat-sub {
+  color: var(--text-muted);
 }

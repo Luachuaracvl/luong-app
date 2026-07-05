@@ -17,9 +17,8 @@ export function OnlineDot({
 
   return (
     <span
-      className={`inline-block rounded-full border-2 ${isOnline ? "border-zinc-900" : "border-zinc-800"} ${
-        isOnline ? "bg-emerald-400" : "bg-zinc-600"
-      } ${className}`}
+      className={`inline-block rounded-full border-2 ${isOnline ? "status-dot-online" : "status-dot-offline"} ${className}`}
+      style={{ borderColor: "var(--bg)" }}
       title={isOnline ? "Online" : "Offline"}
     />
   );

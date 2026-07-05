@@ -1,25 +1,26 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { writeAvatar } from "@/lib/avatar-cache";
 import { AlertBanner } from "./AlertBanner";
-import { ChatPanel } from "./ChatPanel";
+import { SimpleChat } from "./SimpleChat";
 import { DashboardShell } from "./DashboardShell";
 import { EmptyState } from "./EmptyState";
 import { IconChat, IconDownload, IconProfile, IconSalary } from "./Icons";
 import { MonthFilter, filterByMonth, getMonthOptions } from "./MonthFilter";
+import { MonthlySummary } from "./MonthlySummary";
 import { ProfilePanel } from "./ProfilePanel";
 import { SalaryTable } from "./SalaryTable";
 import { SectionHeader } from "./SectionHeader";
 import { StatCard } from "./StatCard";
-import { TeamOnlinePanel, type TeamMember } from "./TeamOnlinePanel";
+import { TeamOnlinePanel } from "./TeamOnlinePanel";
 import {
   computeEmployeeMonthlySummary,
   downloadCsv,
   formatCurrency,
   formatDate,
-  formatMonthLabel,
   getGreeting,
 } from "@/lib/utils";
 
@@ -53,7 +54,7 @@ export default function EmployeeDashboard({ user }: { user: User }) {
   const [monthFilter, setMonthFilter] = useState("all");
   const { user: profileUser, setUser: setProfileUser } = useUserProfile(user);
   const [loading, setLoading] = useState(true);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const { members: teamMembers } = useTeamMembers();
 
   useEffect(() => {
     fetch("/api/employee/salary")
@@ -66,17 +67,6 @@ export default function EmployeeDashboard({ user }: { user: User }) {
       })
       .catch(() => setError("Không thể kết nối server"))
       .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/chat/members")
-      .then(async (res) => {
-        if (res.ok) {
-          const json = await res.json();
-          setTeamMembers(json.members ?? []);
-        }
-      })
-      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -95,6 +85,18 @@ export default function EmployeeDashboard({ user }: { user: User }) {
   const monthlySummary = useMemo(
     () => (data ? computeEmployeeMonthlySummary(data.records) : []),
     [data]
+  );
+
+  const monthlyRows = useMemo(
+    () =>
+      monthlySummary.map((row) => ({
+        month: row.month,
+        revenue: 0,
+        salary: row.salary,
+        adminNet: 0,
+        days: row.days,
+      })),
+    [monthlySummary]
   );
 
   const filteredMonthSalary = filteredRecords.reduce((s, r) => s + r.salary, 0);
@@ -127,34 +129,29 @@ export default function EmployeeDashboard({ user }: { user: User }) {
         tab === "salary"
           ? getGreeting(profileUser.name)
           : tab === "chat"
-            ? "Chat nhóm"
-            : "Hồ sơ cá nhân"
+            ? "Chat"
+            : "Hồ sơ"
       }
-      pageSubtitle={
-        tab === "salary"
-          ? "Theo dõi lương hàng ngày và lịch sử chi trả"
-          : tab === "chat"
-            ? "Trao đổi với admin và đồng nghiệp"
-            : "Cập nhật thông tin và mật khẩu"
-      }
+      pageSubtitle={tab === "salary" ? "Theo dõi lương hàng ngày" : undefined}
+      showSubtitleOnMobile={false}
       fullBleed={tab === "chat"}
     >
       <AlertBanner type="error" message={error} onDismiss={() => setError("")} />
 
-        {tab === "chat" && (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <ChatPanel
-              currentUser={{
-                id: profileUser.id,
-                name: profileUser.name,
-                role: profileUser.role,
-                avatarUrl: profileUser.avatarUrl,
-              }}
-            />
-          </div>
-        )}
+      {tab === "chat" && (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <SimpleChat
+            currentUser={{
+              id: profileUser.id,
+              name: profileUser.name,
+              role: profileUser.role,
+              avatarUrl: profileUser.avatarUrl,
+            }}
+          />
+        </div>
+      )}
 
-        {tab === "profile" && (
+      {tab === "profile" && (
         <ProfilePanel
           user={{
             id: profileUser.id,
@@ -174,10 +171,10 @@ export default function EmployeeDashboard({ user }: { user: User }) {
 
       {tab === "salary" && loading && (
         <div className="space-y-4">
-          <div className="skeleton h-36 w-full rounded-2xl" />
+          <div className="skeleton h-32 w-full rounded-[var(--radius-lg)]" />
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="skeleton h-24 rounded-2xl" />
-            <div className="skeleton h-24 rounded-2xl" />
+            <div className="skeleton h-24 rounded-[var(--radius-lg)]" />
+            <div className="skeleton h-24 rounded-[var(--radius-lg)]" />
           </div>
         </div>
       )}
@@ -186,20 +183,20 @@ export default function EmployeeDashboard({ user }: { user: User }) {
         <div className="space-y-6">
           {todaySalary ? (
             <div className="hero-stat hero-stat-emerald">
-              <p className="text-sm font-medium text-emerald-100">
+              <p className="hero-stat-label text-sm font-medium">
                 Lương hôm nay · {formatDate(todaySalary.date)}
               </p>
-              <p className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+              <p className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
                 {formatCurrency(todaySalary.salary)}
               </p>
-              <p className="mt-2 text-sm text-emerald-100/90">
+              <p className="hero-stat-sub mt-2 text-sm">
                 {todaySalary.percentageUsed}% doanh thu {formatCurrency(todaySalary.revenue)}
               </p>
             </div>
           ) : (
-            <div className="card border-amber-100 bg-amber-50/80">
-              <p className="font-semibold text-amber-900">Chưa có lương hôm nay</p>
-              <p className="mt-1 text-sm text-amber-700">
+            <div className="notice-warning">
+              <p className="notice-title">Chưa có lương hôm nay</p>
+              <p className="notice-desc">
                 Admin chưa cập nhật doanh thu cho ngày hôm nay. Vui lòng quay lại sau.
               </p>
             </div>
@@ -212,7 +209,7 @@ export default function EmployeeDashboard({ user }: { user: User }) {
               value={monthFilter === "all" ? data.records.length : filteredMonthSalary}
               format={monthFilter === "all" ? "number" : "currency"}
               icon="chart"
-              accent="indigo"
+              accent="violet"
             />
             <StatCard
               label="Lương hôm nay"
@@ -226,25 +223,10 @@ export default function EmployeeDashboard({ user }: { user: User }) {
 
           {teamMembers.length > 0 && <TeamOnlinePanel members={teamMembers} />}
 
-          {monthlySummary.length > 0 && (
+          {monthlyRows.length > 0 && (
             <div className="card">
-              <SectionHeader title="Tổng hợp theo tháng" description="Lương đã nhận mỗi tháng" />
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {monthlySummary.slice(0, 6).map((row) => (
-                  <div
-                    key={row.month}
-                    className="rounded-xl border border-zinc-800 bg-gradient-to-br from-white to-emerald-50/30 p-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="font-semibold text-fg">{formatMonthLabel(row.month)}</p>
-                      <span className="badge badge-green">{row.days} ngày</span>
-                    </div>
-                    <p className="mt-2 text-xl font-bold text-success">
-                      {formatCurrency(row.salary)}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <SectionHeader compact title="Tổng hợp theo tháng" description="Lương đã nhận mỗi tháng" />
+              <MonthlySummary rows={monthlyRows} variant="salary" />
             </div>
           )}
 
@@ -271,7 +253,10 @@ export default function EmployeeDashboard({ user }: { user: User }) {
               }
             />
             {filteredRecords.length === 0 ? (
-              <EmptyState title="Không có dữ liệu" description="Thử chọn tháng khác hoặc chờ admin cập nhật doanh thu" />
+              <EmptyState
+                title="Không có dữ liệu"
+                description="Thử chọn tháng khác hoặc chờ admin cập nhật doanh thu"
+              />
             ) : (
               <SalaryTable records={filteredRecords} showRevenue={false} />
             )}

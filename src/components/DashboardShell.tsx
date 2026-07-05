@@ -173,8 +173,7 @@ function SidebarUserCard({ user }: { user: User }) {
 
   return (
     <div
-      className="mb-2 flex items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5"
-      style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
+      className="sidebar-user-card"
     >
       <div className="relative shrink-0">
         <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />

@@ -16,10 +16,7 @@ function TeamMemberRow({ member }: { member: TeamMember }) {
   const presence = usePresence(member.id);
 
   return (
-    <div
-      className="flex items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2"
-      style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
-    >
+    <div className="flex items-center gap-3 rounded-[var(--radius-sm)] border px-3 py-2.5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
       <AvatarWithStatus
         userId={member.id}
         name={member.name}
@@ -66,11 +63,11 @@ export function TeamOnlinePanel({ members }: { members: TeamMember[] }) {
         </div>
         <div className="flex items-center gap-2 text-[10px] font-medium text-subtle">
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            <span className="status-dot-online" />
             Online
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-zinc-600" />
+            <span className="status-dot-offline" />
             Offline
           </span>
         </div>

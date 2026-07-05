@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 export function Modal({
   open,
   onClose,
@@ -13,6 +15,15 @@ export function Modal({
   description?: string;
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (

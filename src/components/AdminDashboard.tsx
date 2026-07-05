@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertBanner } from "./AlertBanner";
 import { DashboardShell } from "./DashboardShell";
 import { EmptyState } from "./EmptyState";
-import { ChatPanel } from "./ChatPanel";
+import { ConfirmModal } from "./ConfirmModal";
+import { SimpleChat } from "./SimpleChat";
 import {
   IconChat,
   IconDashboard,
@@ -157,6 +158,13 @@ export default function AdminDashboard({ user }: { user: User }) {
   const [dayDetail, setDayDetail] = useState<DayRevenueDetail | null>(null);
   const [dayDetailLoading, setDayDetailLoading] = useState(false);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string;
+    description: string;
+    danger?: boolean;
+    action: () => Promise<void>;
+  } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const navItems = [
     { id: "overview", label: "Tổng quan", shortLabel: "Tổng", icon: <IconDashboard className="h-5 w-5" /> },
@@ -448,60 +456,60 @@ export default function AdminDashboard({ user }: { user: User }) {
     const newActive = !selectedEmployee.employee.isActive;
     const action = newActive ? "kích hoạt" : "tạm ngưng";
 
-    const ok = window.confirm(
-      `${newActive ? "Kích hoạt" : "Tạm ngưng"} nhân viên ${selectedEmployee.employee.name}?${
-        !newActive ? "\nNhân viên sẽ không được tính lương các ngày mới." : ""
-      }`
-    );
-    if (!ok) return;
-
-    setMessage("");
-    setError("");
-
-    const empId = selectedEmployee.employee.id;
-    const prevEmployees = employees;
-    const prevSelected = selectedEmployee;
-    const prevOverview = overview;
-
-    setEmployees((list) =>
-      list.map((e) => (e.id === empId ? { ...e, isActive: newActive } : e))
-    );
-    setSelectedEmployee({
-      ...selectedEmployee,
-      employee: { ...selectedEmployee.employee, isActive: newActive },
-    });
-    setOverview((o) =>
-      patchOverview(o, { employeeCount: newActive ? 1 : -1 })
-    );
-    setMessage(`Đã ${action} nhân viên`);
-
-    setSyncing(true);
-    try {
-      const res = await fetch(`/api/admin/employees/${empId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: newActive }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setEmployees(prevEmployees);
-        setSelectedEmployee(prevSelected);
-        setOverview(prevOverview);
-        setError(data.error || `Không thể ${action} nhân viên`);
+    setPendingConfirm({
+      title: newActive ? "Kích hoạt nhân viên" : "Tạm ngưng nhân viên",
+      description: `${newActive ? "Kích hoạt" : "Tạm ngưng"} ${selectedEmployee.employee.name}?${
+        !newActive ? " Nhân viên sẽ không được tính lương các ngày mới." : ""
+      }`,
+      danger: !newActive,
+      action: async () => {
         setMessage("");
-        return;
-      }
-      setSyncDone("Đã đồng bộ");
-    } catch {
-      setEmployees(prevEmployees);
-      setSelectedEmployee(prevSelected);
-      setOverview(prevOverview);
-      setError("Không thể kết nối server");
-      setMessage("");
-    } finally {
-      setSyncing(false);
-      window.setTimeout(() => setSyncDone(""), 2000);
-    }
+        setError("");
+
+        const empId = selectedEmployee.employee.id;
+        const prevEmployees = employees;
+        const prevSelected = selectedEmployee;
+        const prevOverview = overview;
+
+        setEmployees((list) =>
+          list.map((e) => (e.id === empId ? { ...e, isActive: newActive } : e))
+        );
+        setSelectedEmployee({
+          ...selectedEmployee,
+          employee: { ...selectedEmployee.employee, isActive: newActive },
+        });
+        setOverview((o) => patchOverview(o, { employeeCount: newActive ? 1 : -1 }));
+        setMessage(`Đã ${action} nhân viên`);
+
+        setSyncing(true);
+        try {
+          const res = await fetch(`/api/admin/employees/${empId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isActive: newActive }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            setEmployees(prevEmployees);
+            setSelectedEmployee(prevSelected);
+            setOverview(prevOverview);
+            setError(data.error || `Không thể ${action} nhân viên`);
+            setMessage("");
+            return;
+          }
+          setSyncDone("Đã đồng bộ");
+        } catch {
+          setEmployees(prevEmployees);
+          setSelectedEmployee(prevSelected);
+          setOverview(prevOverview);
+          setError("Không thể kết nối server");
+          setMessage("");
+        } finally {
+          setSyncing(false);
+          window.setTimeout(() => setSyncDone(""), 2000);
+        }
+      },
+    });
   }
 
   function startEditRevenue(day: DayStat) {
@@ -605,48 +613,61 @@ export default function AdminDashboard({ user }: { user: User }) {
   }
 
   async function deleteRevenueDay(day: DayStat) {
-    const ok = window.confirm(
-      `Xóa doanh thu ngày ${formatDate(day.date)}?\nLương nhân viên ngày này cũng sẽ bị xóa.`
-    );
-    if (!ok) return;
-
-    setMessage("");
-    setError("");
-
-    const prevOverview = overview;
-    const prevDayStats = dayStats;
-
-    setDayStats((s) => s.filter((d) => d.id !== day.id));
-    setOverview((o) =>
-      patchOverview(o, {
-        revenue: -day.revenue,
-        salary: -day.totalSalary,
-        days: -1,
-      })
-    );
-    setMessage("Đã xóa doanh thu");
-
-    setSyncing(true);
-    try {
-      const res = await fetch(`/api/admin/revenue/${day.id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) {
-        setOverview(prevOverview);
-        setDayStats(prevDayStats);
-        setError(data.error || "Xóa thất bại");
+    setPendingConfirm({
+      title: "Xóa doanh thu ngày",
+      description: `Xóa doanh thu ngày ${formatDate(day.date)}? Lương nhân viên ngày này cũng sẽ bị xóa.`,
+      danger: true,
+      action: async () => {
         setMessage("");
-        return;
-      }
-      setSyncDone("Đã đồng bộ");
-      loadData(true);
-    } catch {
-      setOverview(prevOverview);
-      setDayStats(prevDayStats);
-      setError("Không thể kết nối server");
-      setMessage("");
+        setError("");
+
+        const prevOverview = overview;
+        const prevDayStats = dayStats;
+
+        setDayStats((s) => s.filter((d) => d.id !== day.id));
+        setOverview((o) =>
+          patchOverview(o, {
+            revenue: -day.revenue,
+            salary: -day.totalSalary,
+            days: -1,
+          })
+        );
+        setMessage("Đã xóa doanh thu");
+
+        setSyncing(true);
+        try {
+          const res = await fetch(`/api/admin/revenue/${day.id}`, { method: "DELETE" });
+          const data = await res.json();
+          if (!res.ok) {
+            setOverview(prevOverview);
+            setDayStats(prevDayStats);
+            setError(data.error || "Không thể xóa");
+            setMessage("");
+            return;
+          }
+          setSyncDone("Đã đồng bộ");
+          loadData(true);
+        } catch {
+          setOverview(prevOverview);
+          setDayStats(prevDayStats);
+          setError("Không thể kết nối server");
+          setMessage("");
+        } finally {
+          setSyncing(false);
+          window.setTimeout(() => setSyncDone(""), 2000);
+        }
+      },
+    });
+  }
+
+  async function runPendingConfirm() {
+    if (!pendingConfirm) return;
+    setConfirmLoading(true);
+    try {
+      await pendingConfirm.action();
+      setPendingConfirm(null);
     } finally {
-      setSyncing(false);
-      window.setTimeout(() => setSyncDone(""), 2000);
+      setConfirmLoading(false);
     }
   }
 
@@ -720,7 +741,7 @@ export default function AdminDashboard({ user }: { user: User }) {
       <AlertBanner type="success" message={message} onDismiss={() => setMessage("")} />
       <AlertBanner type="error" message={error} onDismiss={() => setError("")} />
 
-      {loading && tab === "overview" && (
+      {loading && tab !== "chat" && tab !== "profile" && (
         <div className="space-y-4">
           <div className="skeleton h-32 w-full rounded-2xl" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -728,6 +749,7 @@ export default function AdminDashboard({ user }: { user: User }) {
               <div key={i} className="skeleton h-24 rounded-2xl" />
             ))}
           </div>
+          <div className="skeleton h-64 w-full rounded-2xl" />
         </div>
       )}
 
@@ -872,7 +894,7 @@ export default function AdminDashboard({ user }: { user: User }) {
         </div>
       )}
 
-      {tab === "revenue" && (
+      {tab === "revenue" && !loading && (
         <div className="grid gap-6 lg:grid-cols-5">
           <form onSubmit={submitRevenue} className="card space-y-4 lg:col-span-2">
             <SectionHeader
@@ -905,7 +927,7 @@ export default function AdminDashboard({ user }: { user: User }) {
             ) : (
               <div className="space-y-2">
                 {dayStats.slice(0, 5).map((d) => (
-                  <div key={d.id} className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div key={d.id} className="list-row">
                     <div>
                       <p className="font-semibold text-fg">
                         <button
@@ -932,7 +954,7 @@ export default function AdminDashboard({ user }: { user: User }) {
         </div>
       )}
 
-      {tab === "employees" && (
+      {tab === "employees" && !loading && (
         <div className="grid gap-6 xl:grid-cols-5">
           <div className="space-y-6 xl:col-span-2">
             <form onSubmit={createEmployee} className="card space-y-4">
@@ -979,10 +1001,8 @@ export default function AdminDashboard({ user }: { user: User }) {
                       key={emp.id}
                       type="button"
                       onClick={() => loadEmployeeDetail(emp.id)}
-                      className={`flex w-full flex-col gap-2 rounded-xl border px-4 py-3 text-left transition active:bg-zinc-900/40 sm:flex-row sm:items-center sm:gap-3 sm:hover:shadow-sm ${
-                        selectedEmployee?.employee.id === emp.id
-                          ? "border-zinc-600 bg-zinc-800/50/80 ring-1 ring-zinc-700"
-                          : "border-zinc-800 hover:border-zinc-800"
+                      className={`list-row-btn ${
+                        selectedEmployee?.employee.id === emp.id ? "list-row-btn-active" : ""
                       }`}
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -995,7 +1015,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                           <p className="text-sm text-muted">@{emp.username} · {emp.salaryPercentage}%</p>
                         </div>
                       </div>
-                      <div className="border-t border-zinc-800 pt-2 sm:border-0 sm:pt-0 sm:text-right">
+                      <div className="divider-section pt-2 sm:border-0 sm:pt-0 sm:text-right">
                         <p className="font-bold text-success">{formatCurrency(emp.totalSalary)}</p>
                         <p className="text-xs text-subtle">Tổng lương</p>
                       </div>
@@ -1042,7 +1062,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                     <StatCard label="Tổng doanh thu (đã tính)" value={selectedEmployee.totalRevenue} icon="revenue" accent="indigo" />
                   </div>
 
-                  <form onSubmit={updateEmployeePercentage} className="mt-5 flex flex-col gap-3 border-t border-zinc-800 pt-5 sm:flex-row">
+                  <form onSubmit={updateEmployeePercentage} className="divider-section mt-5 flex flex-col gap-3 pt-5 sm:flex-row">
                     <div className="flex-1">
                       <label className="label">Đổi % lương (từ hôm nay)</label>
                       <input type="number" min="0" max="100" step="0.1" className="input" value={editPercentage} onChange={(e) => setEditPercentage(e.target.value)} required />
@@ -1050,7 +1070,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                     <button type="submit" className="btn btn-primary w-full sm:w-auto sm:self-end">Cập nhật %</button>
                   </form>
 
-                  <form onSubmit={resetEmployeePassword} className="mt-4 flex flex-col gap-3 border-t border-zinc-800 pt-4 sm:flex-row">
+                  <form onSubmit={resetEmployeePassword} className="divider-section mt-4 flex flex-col gap-3 pt-4 sm:flex-row">
                     <div className="flex-1">
                       <label className="label">Đặt lại mật khẩu</label>
                       <input type="password" className="input" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" />
@@ -1127,20 +1147,20 @@ export default function AdminDashboard({ user }: { user: User }) {
         )}
       </Modal>
 
-        {tab === "chat" && (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <ChatPanel
-              currentUser={{
-                id: profileUser.id,
-                name: profileUser.name,
-                role: profileUser.role,
-                avatarUrl: profileUser.avatarUrl,
-              }}
-            />
-          </div>
-        )}
+      {tab === "chat" && (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <SimpleChat
+            currentUser={{
+              id: profileUser.id,
+              name: profileUser.name,
+              role: profileUser.role,
+              avatarUrl: profileUser.avatarUrl,
+            }}
+          />
+        </div>
+      )}
 
-        {tab === "profile" && (
+      {tab === "profile" && (
         <ProfilePanel
           user={{
             id: profileUser.id,
@@ -1154,6 +1174,17 @@ export default function AdminDashboard({ user }: { user: User }) {
           }}
         />
       )}
+
+      <ConfirmModal
+        open={!!pendingConfirm}
+        onClose={() => !confirmLoading && setPendingConfirm(null)}
+        title={pendingConfirm?.title ?? ""}
+        description={pendingConfirm?.description}
+        danger={pendingConfirm?.danger}
+        loading={confirmLoading}
+        onConfirm={() => void runPendingConfirm()}
+      />
+
       <SyncIndicator syncing={syncing} label={syncDone} />
     </DashboardShell>
   );
