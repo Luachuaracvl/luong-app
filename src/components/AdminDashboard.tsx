@@ -24,7 +24,8 @@ import { RevenueChart } from "./RevenueChart";
 import { SalaryTable } from "./SalaryTable";
 import { SectionHeader } from "./SectionHeader";
 import { StatCard } from "./StatCard";
-import { UserAvatar } from "./UserAvatar";
+import { AvatarWithStatus } from "./OnlineStatus";
+import { TeamOnlinePanel, type TeamMember } from "./TeamOnlinePanel";
 import {
   computeMonthlySummary,
   dateToInputValue,
@@ -155,6 +156,7 @@ export default function AdminDashboard({ user }: { user: User }) {
   const [viewingDay, setViewingDay] = useState<DayStat | null>(null);
   const [dayDetail, setDayDetail] = useState<DayRevenueDetail | null>(null);
   const [dayDetailLoading, setDayDetailLoading] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   const navItems = [
     { id: "overview", label: "Tổng quan", shortLabel: "Tổng quan", icon: <IconDashboard className="h-5 w-5" /> },
@@ -165,9 +167,12 @@ export default function AdminDashboard({ user }: { user: User }) {
   ];
 
   const loadData = useCallback(async (silent = false) => {
-    const res = await fetch("/api/admin/dashboard");
-    if (!res.ok) return;
-    const data = await res.json();
+    const [dashRes, membersRes] = await Promise.all([
+      fetch("/api/admin/dashboard"),
+      fetch("/api/chat/members"),
+    ]);
+    if (!dashRes.ok) return;
+    const data = await dashRes.json();
     setOverview(data.overview);
     setDayStats(data.stats);
     setEmployees(data.employees);
@@ -177,6 +182,18 @@ export default function AdminDashboard({ user }: { user: User }) {
         avatarUrl: e.avatarUrl,
       }))
     );
+
+    if (membersRes.ok) {
+      const membersData = await membersRes.json();
+      setTeamMembers(membersData.members ?? []);
+      cacheAvatars(
+        (membersData.members as TeamMember[]).map((m) => ({
+          userId: m.id,
+          avatarUrl: m.avatarUrl,
+        }))
+      );
+    }
+
     if (!silent) setLoading(false);
   }, []);
 
@@ -745,6 +762,8 @@ export default function AdminDashboard({ user }: { user: User }) {
             </div>
           </div>
 
+          {teamMembers.length > 0 && <TeamOnlinePanel members={teamMembers} />}
+
           <div>
             <SectionHeader
               title="Chi tiết theo ngày"
@@ -963,7 +982,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                           : "border-slate-100 hover:border-slate-200"
                       }`}
                     >
-                      <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} userId={emp.id} size="md" />
+                      <AvatarWithStatus name={emp.name} avatarUrl={emp.avatarUrl} userId={emp.id} size="md" />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-slate-800">{emp.name}</p>
@@ -987,7 +1006,7 @@ export default function AdminDashboard({ user }: { user: User }) {
               <>
                 <div className="card">
                   <div className="flex flex-wrap items-start gap-4">
-                    <UserAvatar
+                    <AvatarWithStatus
                       name={selectedEmployee.employee.name}
                       avatarUrl={selectedEmployee.employee.avatarUrl}
                       userId={selectedEmployee.employee.id}

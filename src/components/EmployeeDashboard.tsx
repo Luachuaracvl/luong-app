@@ -13,6 +13,7 @@ import { ProfilePanel } from "./ProfilePanel";
 import { SalaryTable } from "./SalaryTable";
 import { SectionHeader } from "./SectionHeader";
 import { StatCard } from "./StatCard";
+import { TeamOnlinePanel, type TeamMember } from "./TeamOnlinePanel";
 import {
   computeEmployeeMonthlySummary,
   downloadCsv,
@@ -52,6 +53,7 @@ export default function EmployeeDashboard({ user }: { user: User }) {
   const [monthFilter, setMonthFilter] = useState("all");
   const { user: profileUser, setUser: setProfileUser } = useUserProfile(user);
   const [loading, setLoading] = useState(true);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   useEffect(() => {
     fetch("/api/employee/salary")
@@ -64,6 +66,17 @@ export default function EmployeeDashboard({ user }: { user: User }) {
       })
       .catch(() => setError("Không thể kết nối server"))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/chat/members")
+      .then(async (res) => {
+        if (res.ok) {
+          const json = await res.json();
+          setTeamMembers(json.members ?? []);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -207,6 +220,8 @@ export default function EmployeeDashboard({ user }: { user: User }) {
               accent="amber"
             />
           </div>
+
+          {teamMembers.length > 0 && <TeamOnlinePanel members={teamMembers} />}
 
           {monthlySummary.length > 0 && (
             <div className="card">

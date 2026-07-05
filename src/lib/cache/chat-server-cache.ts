@@ -6,16 +6,17 @@ type CachedMessages = (ChatMessageDoc & { id: string })[];
 const MESSAGES_TTL_MS = 4_000;
 const MEMBERS_TTL_MS = 30_000;
 
-let messagesCache: { data: CachedMessages; expiresAt: number } | null = null;
+const messagesCache = new Map<string, { data: CachedMessages; expiresAt: number }>();
 let membersCache: { data: ChatMemberSummary[]; expiresAt: number } | null = null;
 
-export function getCachedRecentMessages(): CachedMessages | null {
-  if (!messagesCache || Date.now() > messagesCache.expiresAt) return null;
-  return messagesCache.data;
+export function getCachedRecentMessages(roomKey: string): CachedMessages | null {
+  const cached = messagesCache.get(roomKey);
+  if (!cached || Date.now() > cached.expiresAt) return null;
+  return cached.data;
 }
 
-export function setCachedRecentMessages(data: CachedMessages) {
-  messagesCache = { data, expiresAt: Date.now() + MESSAGES_TTL_MS };
+export function setCachedRecentMessages(roomKey: string, data: CachedMessages) {
+  messagesCache.set(roomKey, { data, expiresAt: Date.now() + MESSAGES_TTL_MS });
 }
 
 export function getCachedMembers(): ChatMemberSummary[] | null {
@@ -27,52 +28,46 @@ export function setCachedMembers(data: ChatMemberSummary[]) {
   membersCache = { data, expiresAt: Date.now() + MEMBERS_TTL_MS };
 }
 
-export function invalidateMessagesCache() {
-  messagesCache = null;
+export function invalidateMessagesCache(roomKey?: string) {
+  if (roomKey) messagesCache.delete(roomKey);
+  else messagesCache.clear();
 }
 
 export function appendMessageToCache(message: ChatMessageDoc & { id: string }) {
-  const cached = getCachedRecentMessages();
+  const roomKey = message.roomKey ?? "channel:general";
+  const cached = getCachedRecentMessages(roomKey);
   if (!cached) return;
-  const next = [...cached, message].slice(-80);
-  setCachedRecentMessages(next);
+  setCachedRecentMessages(roomKey, [...cached, message].slice(-80));
 }
 
 export function mergeSinceIntoCache(
+  roomKey: string,
   since: Date,
   incoming: (ChatMessageDoc & { id: string })[]
 ) {
   if (!incoming.length) return;
-  const cached = getCachedRecentMessages();
+  const cached = getCachedRecentMessages(roomKey);
   if (!cached) return;
   const sinceMs = since.getTime();
-  const base = cached.filter((m) => {
-    const ms = m.createdAt?.toMillis?.() ?? 0;
-    return ms <= sinceMs;
-  });
+  const base = cached.filter((m) => (m.createdAt?.toMillis?.() ?? 0) <= sinceMs);
   const ids = new Set(base.map((m) => m.id));
   for (const m of incoming) {
     if (!ids.has(m.id)) base.push(m);
   }
-  setCachedRecentMessages(base.slice(-80));
+  setCachedRecentMessages(roomKey, base.slice(-80));
 }
 
-export function upsertMessagesInCache(incoming: (ChatMessageDoc & { id: string })[]) {
+export function upsertMessagesInCache(
+  roomKey: string,
+  incoming: (ChatMessageDoc & { id: string })[]
+) {
   if (!incoming.length) return;
-  const cached = getCachedRecentMessages();
+  const cached = getCachedRecentMessages(roomKey);
   if (!cached) return;
   const byId = new Map(cached.map((m) => [m.id, m]));
-  for (const m of incoming) {
-    byId.set(m.id, m);
-  }
+  for (const m of incoming) byId.set(m.id, m);
   const next = [...byId.values()].sort(
     (a, b) => (a.createdAt?.toMillis?.() ?? 0) - (b.createdAt?.toMillis?.() ?? 0)
   );
-  setCachedRecentMessages(next.slice(-80));
-}
-
-export function removeMessageFromCache(messageId: string) {
-  const cached = getCachedRecentMessages();
-  if (!cached) return;
-  setCachedRecentMessages(cached.filter((m) => m.id !== messageId));
+  setCachedRecentMessages(roomKey, next.slice(-80));
 }

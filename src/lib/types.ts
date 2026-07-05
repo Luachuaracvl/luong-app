@@ -49,12 +49,30 @@ export type PercentageHistoryDoc = {
   createdAt: Timestamp;
 };
 
+export type ChatChannelDoc = {
+  name: string;
+  slug: string;
+  description?: string;
+  isDefault?: boolean;
+  adminOnly?: boolean;
+  createdAt: Timestamp;
+};
+
 export type ChatMessageDoc = {
   senderId: string;
   senderName: string;
   senderRole: Role;
   senderAvatarUrl?: string | null;
   text: string;
+  roomKey: string;
+  channelId?: string | null;
+  dmPeerId?: string | null;
+  replyToId?: string | null;
+  replyToName?: string | null;
+  replyToText?: string | null;
+  mentions?: string[];
+  reactions?: Record<string, string[]>;
+  edited?: boolean;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
   recalled?: boolean;

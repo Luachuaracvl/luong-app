@@ -37,6 +37,7 @@ export async function findEmployees() {
 export type ChatMemberSummary = {
   id: string;
   name: string;
+  username: string;
   role: Role;
   avatarUrl: string | null;
   isActive: boolean;
@@ -50,6 +51,7 @@ export async function findAllUsersForChat(): Promise<ChatMemberSummary[]> {
       return {
         id: doc.id,
         name: data.name,
+        username: data.username,
         role: data.role,
         avatarUrl: data.avatarUrl ?? null,
         isActive: data.isActive,

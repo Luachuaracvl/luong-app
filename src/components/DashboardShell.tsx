@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { OnlineDot } from "./OnlineStatus";
+import { PresenceProvider } from "./PresenceProvider";
 import { UserAvatar } from "./UserAvatar";
 import { IconLogout } from "./Icons";
 
@@ -46,6 +48,7 @@ export function DashboardShell({
   }
 
   return (
+    <PresenceProvider userId={user.id}>
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">
@@ -78,7 +81,10 @@ export function DashboardShell({
 
         <div className="sidebar-footer">
           <div className="mb-2 flex items-center gap-3 rounded-xl bg-slate-800/60 px-3 py-2.5">
-            <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
+            <div className="relative shrink-0">
+              <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
+              <OnlineDot userId={user.id} className="absolute bottom-0 right-0 h-2.5 w-2.5" />
+            </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{user.name}</p>
               <p className="truncate text-xs text-slate-400">
@@ -145,5 +151,6 @@ export function DashboardShell({
         ))}
       </nav>
     </div>
+    </PresenceProvider>
   );
 }
