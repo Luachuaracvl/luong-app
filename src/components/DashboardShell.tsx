@@ -97,29 +97,34 @@ export function DashboardShell({
       <div className={`main-area ${fullBleed ? "main-area-full" : ""}`}>
         {!fullBleed && (
         <header className="topbar">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="truncate text-lg font-bold text-slate-900 sm:text-xl">
-                {pageTitle}
-              </h1>
-              {pageSubtitle && (
-                <p className="mt-0.5 text-sm text-slate-500">{pageSubtitle}</p>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h1 className="truncate text-lg font-bold text-slate-900 sm:text-xl">
+                  {pageTitle}
+                </h1>
+                {pageSubtitle && (
+                  <p className="mt-0.5 line-clamp-2 text-sm text-slate-500">{pageSubtitle}</p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-2 lg:hidden">
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition active:bg-red-50 active:text-red-600"
+                  aria-label="Đăng xuất"
+                  title="Đăng xuất"
+                >
+                  <IconLogout className="h-5 w-5" />
+                </button>
+                <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
+              </div>
+              {headerAction && (
+                <div className="hidden shrink-0 sm:block">{headerAction}</div>
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-2 lg:hidden">
-              <button
-                type="button"
-                onClick={logout}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-red-50 hover:text-red-600"
-                aria-label="Đăng xuất"
-                title="Đăng xuất"
-              >
-                <IconLogout className="h-5 w-5" />
-              </button>
-              <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
-            </div>
             {headerAction && (
-              <div className="hidden shrink-0 sm:block">{headerAction}</div>
+              <div className="sm:hidden [&_.btn]:w-full">{headerAction}</div>
             )}
           </div>
         </header>

@@ -21,7 +21,8 @@ export function AlertBanner({
         <button
           type="button"
           onClick={onDismiss}
-          className="shrink-0 rounded-lg px-2 py-1 text-xs opacity-70 hover:opacity-100"
+          className="alert-dismiss"
+          aria-label="Đóng"
         >
           ✕
         </button>

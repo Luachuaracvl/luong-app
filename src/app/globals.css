@@ -11,6 +11,7 @@
   --accent-amber: #d97706;
   --card-shadow: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06);
   --card-shadow-lg: 0 10px 40px -10px rgb(15 23 42 / 0.12);
+  --bottom-nav-height: calc(4.25rem + env(safe-area-inset-bottom, 0px));
 }
 
 html {
@@ -69,23 +70,41 @@ button {
 }
 
 .topbar {
-  @apply sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-4;
+  @apply sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-md sm:px-6 sm:py-4;
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+  padding-bottom: 0.75rem;
 }
 
 .page-content {
-  @apply flex-1 px-4 py-5 pb-24 sm:px-6 sm:py-8 lg:pb-8;
+  @apply flex-1 px-4 py-4 sm:px-6 sm:py-8;
+  padding-bottom: calc(var(--bottom-nav-height) + 1rem);
+}
+
+@media (min-width: 1024px) {
+  .page-content {
+    @apply pb-8;
+  }
 }
 
 .page-content-full {
-  @apply flex min-h-0 flex-col overflow-hidden p-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] sm:p-0 lg:pb-0;
+  @apply flex min-h-0 flex-col overflow-hidden p-0;
+  height: calc(100dvh - var(--bottom-nav-height));
+}
+
+@media (min-width: 1024px) {
+  .page-content-full {
+    height: auto;
+    @apply flex-1;
+  }
 }
 
 .bottom-nav {
-  @apply fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white/95 px-2 py-2 backdrop-blur-md lg:hidden;
+  @apply fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white/95 px-1 backdrop-blur-md lg:hidden;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .bottom-nav-link {
-  @apply flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-[10px] font-medium text-slate-500 transition;
+  @apply flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-[11px] font-medium leading-tight text-slate-500 transition active:bg-slate-100;
 }
 
 .bottom-nav-link-active {
@@ -108,7 +127,7 @@ button {
 }
 
 .btn {
-  @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition disabled:opacity-50 sm:px-4 sm:py-2.5;
+  @apply inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 sm:min-h-0 sm:px-4 sm:py-2.5;
 }
 
 .btn-primary {
@@ -128,7 +147,15 @@ button {
 }
 
 .input {
-  @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20;
+  @apply w-full min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-base outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 sm:min-h-0 sm:text-sm;
+}
+
+.btn-row {
+  @apply flex flex-col gap-2 sm:flex-row sm:flex-wrap;
+}
+
+.btn-row .btn {
+  @apply w-full sm:w-auto;
 }
 
 .label {
@@ -210,7 +237,11 @@ table.data-table tr:last-child td {
 }
 
 .mobile-record-card dd {
-  @apply text-right font-medium text-slate-900;
+  @apply break-all text-right font-medium text-slate-900;
+}
+
+.alert-dismiss {
+  @apply flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-base opacity-70 transition active:bg-black/5 active:opacity-100;
 }
 
 /* Badges & alerts */
@@ -263,8 +294,24 @@ table.data-table tr:last-child td {
 }
 
 .modal-panel {
-  @apply max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6;
+  @apply max-h-[min(90dvh,640px)] w-full max-w-md overflow-y-auto rounded-t-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:max-h-[90vh] sm:rounded-2xl sm:p-6;
   box-shadow: var(--card-shadow);
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+.modal-handle {
+  @apply mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-slate-200 sm:hidden;
+}
+
+.sync-indicator {
+  @apply fixed left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-4 py-2.5 text-sm font-medium text-slate-700 shadow-lg backdrop-blur-md;
+  bottom: calc(var(--bottom-nav-height) + 0.75rem);
+}
+
+@media (min-width: 1024px) {
+  .sync-indicator {
+    bottom: 1.5rem;
+  }
 }
 
 /* Empty state */
@@ -274,7 +321,9 @@ table.data-table tr:last-child td {
 
 /* Login */
 .login-shell {
-  @apply relative flex min-h-screen items-center justify-center px-4 py-10;
+  @apply relative flex min-h-[100dvh] items-center justify-center px-4;
+  padding-top: max(2rem, env(safe-area-inset-top, 0px));
+  padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
   background:
     radial-gradient(circle at 50% 0%, rgb(99 102 241 / 0.12), transparent 42%),
     linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
@@ -393,11 +442,11 @@ table.data-table tr:last-child td {
 
 /* Discord-style chat */
 .discord-chat {
-  @apply relative flex min-h-0 w-full flex-1 overflow-hidden bg-slate-50;
+  @apply relative flex h-full min-h-0 w-full flex-1 overflow-hidden bg-slate-50;
 }
 
 .discord-pane {
-  @apply hidden min-h-0 min-w-0 flex-col;
+  @apply hidden h-full min-h-0 min-w-0 flex-col overflow-hidden;
 }
 
 .discord-pane-active {
@@ -405,7 +454,7 @@ table.data-table tr:last-child td {
 }
 
 .discord-sidebar {
-  @apply hidden min-h-0 min-w-0 w-full shrink-0 flex-col overflow-y-auto border-r border-slate-200/80 bg-white lg:flex lg:w-[17.5rem];
+  @apply hidden h-full min-h-0 min-w-0 w-full shrink-0 flex-col overflow-y-auto border-r border-slate-200/80 bg-white lg:flex lg:w-[17.5rem];
 }
 
 .discord-sidebar.discord-pane-active {
@@ -437,7 +486,7 @@ table.data-table tr:last-child td {
 }
 
 .discord-main {
-  @apply hidden min-h-0 min-w-0 flex-1 flex-col bg-white lg:flex;
+  @apply hidden h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white lg:flex;
 }
 
 .discord-main.discord-pane-active {
@@ -445,7 +494,7 @@ table.data-table tr:last-child td {
 }
 
 .discord-header {
-  @apply flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 bg-white px-3 py-2.5 shadow-sm sm:px-4;
+  @apply z-10 flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 bg-white px-3 py-2.5 shadow-sm sm:px-4;
 }
 
 .discord-header-back {
@@ -477,12 +526,16 @@ table.data-table tr:last-child td {
 }
 
 .discord-main-body {
-  @apply relative flex min-h-0 flex-1;
+  @apply relative flex min-h-0 flex-1 flex-col overflow-hidden;
 }
 
 .discord-messages {
-  @apply flex-1 overflow-y-auto px-3 py-2 sm:px-4;
+  @apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 sm:px-4;
   -webkit-overflow-scrolling: touch;
+}
+
+.discord-search-bar {
+  @apply shrink-0 border-b border-slate-200/80 bg-white px-3 py-2;
 }
 
 .discord-date-divider {
@@ -552,7 +605,7 @@ table.data-table tr:last-child td {
 }
 
 .discord-msg-more {
-  @apply absolute right-0 top-0 flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600;
+  @apply absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-slate-400 transition active:bg-slate-100 active:text-slate-600;
 }
 
 .discord-action-sheet {
@@ -560,7 +613,7 @@ table.data-table tr:last-child td {
 }
 
 .discord-action-btn {
-  @apply rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200/80 hover:bg-slate-50 active:bg-slate-100;
+  @apply min-h-11 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200/80 active:bg-slate-100;
 }
 
 .discord-reply-bar {
@@ -570,6 +623,12 @@ table.data-table tr:last-child td {
 .discord-composer {
   @apply flex shrink-0 items-end gap-2 border-t border-slate-200/80 bg-white px-2 py-2 sm:px-3;
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .discord-composer {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
 }
 
 .discord-composer-field {
@@ -596,10 +655,6 @@ table.data-table tr:last-child td {
   @apply mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-2xl;
 }
 
-.discord-search-bar {
-  @apply border-b border-slate-200/80 bg-white px-3 py-2;
-}
-
 .discord-action-sheet-handle {
   @apply mx-auto my-2 h-1 w-10 rounded-full bg-slate-200;
 }
@@ -609,5 +664,12 @@ table.data-table tr:last-child td {
 }
 
 .discord-toast-error {
-  @apply absolute bottom-20 left-3 right-3 z-20 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-600 shadow-lg ring-1 ring-red-100 sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-sm;
+  @apply absolute left-3 right-3 z-20 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-600 shadow-lg ring-1 ring-red-100;
+  bottom: calc(var(--bottom-nav-height) + 4.5rem);
+}
+
+@media (min-width: 1024px) {
+  .discord-toast-error {
+    @apply bottom-4 left-4 right-auto max-w-sm;
+  }
 }

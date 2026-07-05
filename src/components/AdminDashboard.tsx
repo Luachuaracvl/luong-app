@@ -159,7 +159,7 @@ export default function AdminDashboard({ user }: { user: User }) {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   const navItems = [
-    { id: "overview", label: "Tổng quan", shortLabel: "Tổng quan", icon: <IconDashboard className="h-5 w-5" /> },
+    { id: "overview", label: "Tổng quan", shortLabel: "Tổng", icon: <IconDashboard className="h-5 w-5" /> },
     { id: "revenue", label: "Doanh thu", shortLabel: "Doanh thu", icon: <IconRevenue className="h-5 w-5" /> },
     { id: "employees", label: "Nhân viên", shortLabel: "NV", icon: <IconUsers className="h-5 w-5" /> },
     { id: "chat", label: "Chat", shortLabel: "Chat", icon: <IconChat className="h-5 w-5" /> },
@@ -684,14 +684,14 @@ export default function AdminDashboard({ user }: { user: User }) {
 
   function renderDayStatActions(d: DayStat) {
     return (
-      <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={() => void openDayDetail(d)} className="btn btn-primary px-2 py-1 text-xs">
+      <div className="btn-row">
+        <button type="button" onClick={() => void openDayDetail(d)} className="btn btn-primary">
           Chi tiết
         </button>
-        <button type="button" onClick={() => startEditRevenue(d)} className="btn btn-secondary px-2 py-1 text-xs">
+        <button type="button" onClick={() => startEditRevenue(d)} className="btn btn-secondary">
           Sửa
         </button>
-        <button type="button" onClick={() => deleteRevenueDay(d)} className="btn btn-danger px-2 py-1 text-xs">
+        <button type="button" onClick={() => deleteRevenueDay(d)} className="btn btn-danger">
           Xóa
         </button>
       </div>
@@ -977,21 +977,23 @@ export default function AdminDashboard({ user }: { user: User }) {
                       key={emp.id}
                       type="button"
                       onClick={() => loadEmployeeDetail(emp.id)}
-                      className={`flex w-full gap-3 rounded-xl border px-4 py-3 text-left transition hover:shadow-sm sm:items-center ${
+                      className={`flex w-full flex-col gap-2 rounded-xl border px-4 py-3 text-left transition active:bg-slate-50 sm:flex-row sm:items-center sm:gap-3 sm:hover:shadow-sm ${
                         selectedEmployee?.employee.id === emp.id
                           ? "border-indigo-300 bg-indigo-50/80 ring-1 ring-indigo-200"
                           : "border-slate-100 hover:border-slate-200"
                       }`}
                     >
-                      <AvatarWithStatus name={emp.name} avatarUrl={emp.avatarUrl} userId={emp.id} size="md" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold text-slate-800">{emp.name}</p>
-                          {!emp.isActive && <span className="badge badge-red">Tạm ngưng</span>}
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <AvatarWithStatus name={emp.name} avatarUrl={emp.avatarUrl} userId={emp.id} size="md" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-slate-800">{emp.name}</p>
+                            {!emp.isActive && <span className="badge badge-red">Tạm ngưng</span>}
+                          </div>
+                          <p className="text-sm text-slate-500">@{emp.username} · {emp.salaryPercentage}%</p>
                         </div>
-                        <p className="text-sm text-slate-500">@{emp.username} · {emp.salaryPercentage}%</p>
                       </div>
-                      <div className="sm:text-right">
+                      <div className="border-t border-slate-100 pt-2 sm:border-0 sm:pt-0 sm:text-right">
                         <p className="font-bold text-emerald-700">{formatCurrency(emp.totalSalary)}</p>
                         <p className="text-xs text-slate-400">Tổng lương</p>
                       </div>

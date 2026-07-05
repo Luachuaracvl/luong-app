@@ -251,7 +251,7 @@ export function ProfilePanel({
             title="Bấm để đổi avatar"
           >
             <UserAvatar name={profile.name} avatarUrl={profile.avatarUrl} userId={profile.id} size="lg" />
-            <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+            <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-xs font-medium text-white opacity-100 sm:opacity-0 sm:transition sm:group-hover:opacity-100">
               Đổi ảnh
             </span>
           </button>

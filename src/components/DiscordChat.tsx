@@ -156,7 +156,7 @@ export function DiscordChat({
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
-  const [mobilePane, setMobilePane] = useState<"list" | "room">("list");
+  const [mobilePane, setMobilePane] = useState<"list" | "room">("room");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [actionMsg, setActionMsg] = useState<ChatMessage | null>(null);
@@ -221,7 +221,13 @@ export function DiscordChat({
       .then(async ([chRes, memRes]) => {
         if (chRes.ok) {
           const chData = await chRes.json();
-          setChannels(chData.channels ?? []);
+          const list = (chData.channels ?? []) as Channel[];
+          setChannels(list);
+          const first = list.find((c) => c.isDefault) ?? list[0];
+          if (first) {
+            setView({ type: "channel", channelId: first.id, label: first.name });
+            setMobilePane("room");
+          }
         }
         if (memRes.ok) {
           const memData = await memRes.json();
