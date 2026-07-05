@@ -4,6 +4,8 @@ import type { ChatChannelDoc } from "@/lib/types";
 
 const COLLECTION = "chatChannels";
 
+const REMOVED_CHANNEL_IDS = ["thong-bao"];
+
 const DEFAULT_CHANNELS: Omit<ChatChannelDoc, "createdAt">[] = [
   {
     slug: "general",
@@ -12,15 +14,21 @@ const DEFAULT_CHANNELS: Omit<ChatChannelDoc, "createdAt">[] = [
     isDefault: true,
     adminOnly: false,
   },
-  {
-    slug: "thong-bao",
-    name: "thong-bao",
-    description: "Thông báo quan trọng (admin)",
-    adminOnly: true,
-  },
 ];
 
+async function purgeRemovedChannels() {
+  const db = getDb();
+  for (const id of REMOVED_CHANNEL_IDS) {
+    try {
+      await db.collection(COLLECTION).doc(id).delete();
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 export async function ensureDefaultChannels() {
+  await purgeRemovedChannels();
   const db = getDb();
   const snap = await db.collection(COLLECTION).limit(1).get();
   if (!snap.empty) {
@@ -40,6 +48,7 @@ export async function ensureDefaultChannels() {
 }
 
 export async function listChannels() {
+  await purgeRemovedChannels();
   const snap = await getDb().collection(COLLECTION).get();
   return snap.docs
     .map((doc) => ({ id: doc.id, ...(doc.data() as ChatChannelDoc) }))

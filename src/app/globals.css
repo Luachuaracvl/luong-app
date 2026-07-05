@@ -547,44 +547,20 @@ table.data-table tr:last-child td {
   @apply border-indigo-300 bg-indigo-50 text-indigo-700;
 }
 
-.discord-msg-actions {
-  @apply mt-1 hidden flex-wrap gap-1;
-}
-
-.discord-message.group:hover .discord-msg-actions {
-  @apply flex;
-}
-
-.discord-msg-actions-mobile {
-  @apply mt-1 flex flex-wrap gap-1 lg:hidden;
-}
-
-.discord-action-btn {
-  @apply rounded-md bg-white px-2 py-1 text-[11px] font-medium text-slate-600 shadow-sm ring-1 ring-slate-200/80 hover:bg-slate-50;
+.discord-msg-actions-sheet {
+  @apply flex flex-wrap justify-center gap-2;
 }
 
 .discord-msg-more {
-  @apply absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-md text-slate-400 opacity-100 transition lg:opacity-0;
+  @apply absolute right-0 top-0 flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600;
 }
 
-.discord-message.group:hover .discord-msg-more {
-  @apply opacity-100;
+.discord-action-sheet {
+  @apply fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom,0px)] shadow-2xl ring-1 ring-slate-200 sm:left-1/2 sm:max-w-md sm:-translate-x-1/2;
 }
 
-.discord-members {
-  @apply hidden w-60 shrink-0 flex-col overflow-y-auto border-l border-slate-200/80 bg-slate-50/50 xl:flex;
-}
-
-.discord-members-sheet {
-  @apply fixed inset-0 z-50 flex flex-col bg-white lg:hidden;
-}
-
-.discord-members-sheet-header {
-  @apply flex items-center justify-between border-b border-slate-200 px-4 py-3;
-}
-
-.discord-member-row {
-  @apply mb-0.5 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition hover:bg-white active:bg-slate-100;
+.discord-action-btn {
+  @apply rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200/80 hover:bg-slate-50 active:bg-slate-100;
 }
 
 .discord-reply-bar {
@@ -622,10 +598,6 @@ table.data-table tr:last-child td {
 
 .discord-search-bar {
   @apply border-b border-slate-200/80 bg-white px-3 py-2;
-}
-
-.discord-action-sheet {
-  @apply fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom,0px)] shadow-2xl ring-1 ring-slate-200 lg:hidden;
 }
 
 .discord-action-sheet-handle {

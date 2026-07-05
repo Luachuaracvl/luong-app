@@ -4,16 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QUICK_REACTIONS } from "@/lib/chat-room";
 import { cacheAvatars } from "@/lib/avatar-cache";
 import {
-  IconChevronDown,
   IconChevronLeft,
   IconClose,
   IconDots,
   IconHash,
-  IconPlus,
   IconSearch,
   IconSend,
-  IconSmile,
-  IconUsers,
 } from "./Icons";
 import { AvatarWithStatus } from "./OnlineStatus";
 import { useOnlineCount } from "./PresenceProvider";
@@ -161,7 +157,6 @@ export function DiscordChat({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [mobilePane, setMobilePane] = useState<"list" | "room">("list");
-  const [showMembers, setShowMembers] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [actionMsg, setActionMsg] = useState<ChatMessage | null>(null);
@@ -451,7 +446,6 @@ export function DiscordChat({
   function openRoom(nextView: ChatView) {
     setView(nextView);
     setMobilePane("room");
-    setShowMembers(false);
   }
 
   function selectChannel(channel: Channel) {
@@ -490,13 +484,12 @@ export function DiscordChat({
     );
   }
 
-  function renderMessageActions(msg: ChatMessage, isMe: boolean, mobile = false) {
+  function renderMessageActions(msg: ChatMessage, isMe: boolean) {
     if (msg.recalled || editingId === msg.id) return null;
-    const cls = mobile ? "discord-msg-actions-mobile" : "discord-msg-actions";
 
     return (
-      <div className={cls}>
-        {QUICK_REACTIONS.slice(0, mobile ? 4 : 6).map((emoji) => (
+      <div className="discord-msg-actions-sheet">
+        {QUICK_REACTIONS.map((emoji) => (
           <button
             key={emoji}
             type="button"
@@ -506,7 +499,14 @@ export function DiscordChat({
             {emoji}
           </button>
         ))}
-        <button type="button" className="discord-action-btn" onClick={() => setReplyTo(msg)}>
+        <button
+          type="button"
+          className="discord-action-btn"
+          onClick={() => {
+            setReplyTo(msg);
+            setActionMsg(null);
+          }}
+        >
           Trả lời
         </button>
         {isMe && !msg._pending && (
@@ -611,7 +611,6 @@ export function DiscordChat({
               onChange={(e) => setNewChannelName(e.target.value)}
             />
             <button type="submit" className="btn btn-secondary w-full text-xs">
-              <IconPlus className="h-4 w-4" />
               Tạo kênh
             </button>
           </form>
@@ -636,7 +635,6 @@ export function DiscordChat({
                 <IconHash className="h-5 w-5 shrink-0 text-slate-400" />
               ) : null}
               <span className="truncate">{roomTitle}</span>
-              <IconChevronDown className="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" />
             </div>
             <div className="discord-header-meta">
               <span className="discord-header-dot" />
@@ -654,14 +652,6 @@ export function DiscordChat({
               aria-label="Tìm kiếm"
             >
               <IconSearch className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              className="discord-icon-btn xl:hidden"
-              onClick={() => setShowMembers(true)}
-              aria-label="Thành viên"
-            >
-              <IconUsers className="h-5 w-5" />
             </button>
           </div>
         </header>
@@ -716,7 +706,6 @@ export function DiscordChat({
               }
 
               const { msg, compact } = row;
-              const isMe = msg.senderId === currentUser.id;
               const isEditing = editingId === msg.id;
 
               return (
@@ -811,48 +800,22 @@ export function DiscordChat({
                       </div>
                     )}
 
-                    {renderMessageActions(msg, isMe, false)}
-
-                    <button
-                      type="button"
-                      className="discord-msg-more lg:hidden"
-                      onClick={() => setActionMsg(msg)}
-                      aria-label="Tùy chọn tin nhắn"
-                    >
-                      <IconDots className="h-4 w-4" />
-                    </button>
+                    {!msg.recalled && !isEditing && (
+                      <button
+                        type="button"
+                        className="discord-msg-more"
+                        onClick={() => setActionMsg(msg)}
+                        aria-label="Tùy chọn tin nhắn"
+                      >
+                        <IconDots className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
             })}
             <div ref={bottomRef} />
           </div>
-
-          <aside className="discord-members">
-            <div className="sticky top-0 border-b border-slate-200/80 bg-slate-50/80 px-3 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Thành viên — {onlineCount} online
-              </p>
-            </div>
-            <div className="p-2">
-              {members.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => m.id !== currentUser.id && selectDm(m)}
-                  className="discord-member-row"
-                >
-                  <AvatarWithStatus userId={m.id} name={m.name} avatarUrl={m.avatarUrl} size="sm" />
-                  <div className="min-w-0 text-left">
-                    <p className="truncate text-sm font-medium text-slate-800">{m.name}</p>
-                    <p className="text-[10px] text-slate-500">
-                      {m.role === "ADMIN" ? "Admin" : "Nhân viên"}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </aside>
         </div>
 
         {replyTo && (
@@ -874,14 +837,7 @@ export function DiscordChat({
           </div>
         )}
 
-        <form
-          onSubmit={(e) => void sendMessage(e)}
-          className="discord-composer"
-        >
-          <button type="button" className="discord-composer-btn" tabIndex={-1} aria-hidden>
-            <IconPlus className="h-5 w-5" />
-          </button>
-
+        <form onSubmit={(e) => void sendMessage(e)} className="discord-composer">
           <div className="discord-composer-field">
             <textarea
               ref={inputRef}
@@ -900,14 +856,6 @@ export function DiscordChat({
               rows={1}
               maxLength={2000}
             />
-            <button
-              type="button"
-              className="discord-composer-btn mr-0.5"
-              onClick={() => setText((t) => t + "😊")}
-              aria-label="Emoji"
-            >
-              <IconSmile className="h-5 w-5" />
-            </button>
           </div>
 
           <button
@@ -921,52 +869,6 @@ export function DiscordChat({
         </form>
       </div>
 
-      {/* Mobile members sheet */}
-      {showMembers && (
-        <>
-          <button
-            type="button"
-            className="discord-overlay xl:hidden"
-            onClick={() => setShowMembers(false)}
-            aria-label="Đóng"
-          />
-          <div className="discord-members-sheet">
-            <div className="discord-members-sheet-header">
-              <p className="font-semibold text-slate-900">Thành viên</p>
-              <button
-                type="button"
-                className="discord-icon-btn"
-                onClick={() => setShowMembers(false)}
-              >
-                <IconClose className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-2">
-              {members.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => {
-                    if (m.id !== currentUser.id) selectDm(m);
-                    setShowMembers(false);
-                  }}
-                  className="discord-member-row"
-                >
-                  <AvatarWithStatus userId={m.id} name={m.name} avatarUrl={m.avatarUrl} size="sm" />
-                  <div className="min-w-0 text-left">
-                    <p className="truncate text-sm font-medium text-slate-800">{m.name}</p>
-                    <p className="text-[10px] text-slate-500">
-                      {m.role === "ADMIN" ? "Admin" : "Nhân viên"}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Mobile message action sheet */}
       {actionMsg && (
         <>
           <button
@@ -981,7 +883,7 @@ export function DiscordChat({
               <p className="mb-3 text-center text-xs text-slate-500">
                 {actionMsg.senderName} · {formatTime(actionMsg.createdAt)}
               </p>
-              {renderMessageActions(actionMsg, actionMsg.senderId === currentUser.id, true)}
+              {renderMessageActions(actionMsg, actionMsg.senderId === currentUser.id)}
             </div>
           </div>
         </>
