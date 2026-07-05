@@ -12,10 +12,10 @@ export function MonthFilter({
   options: string[];
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
       <label className="text-sm text-slate-600">Lọc tháng:</label>
       <select
-        className="input max-w-[180px] py-2"
+        className="input w-full py-2 sm:max-w-[180px]"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >

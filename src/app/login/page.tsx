@@ -38,7 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8">
       <div className="card w-full max-w-md">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold">Quản lý Lương</h1>

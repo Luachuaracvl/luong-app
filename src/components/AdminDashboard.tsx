@@ -330,7 +330,7 @@ export default function AdminDashboard({ user }: { user: User }) {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "overview", label: "Tổng quan" },
-    { id: "revenue", label: "Cập nhật doanh thu" },
+    { id: "revenue", label: "Doanh thu" },
     { id: "employees", label: "Nhân viên" },
     { id: "profile", label: "Hồ sơ" },
   ];
@@ -342,13 +342,13 @@ export default function AdminDashboard({ user }: { user: User }) {
         onOpenProfile={() => setTab("profile")}
       />
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6 flex flex-wrap gap-2">
+      <main className="mx-auto max-w-6xl px-4 py-4 sm:py-8">
+        <div className="tab-bar mb-4 sm:mb-6">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`btn ${
+              className={`btn whitespace-nowrap ${
                 tab === t.id ? "btn-primary" : "btn-secondary"
               }`}
             >
@@ -375,13 +375,13 @@ export default function AdminDashboard({ user }: { user: User }) {
         {tab === "overview" && (
           <div className="space-y-6">
             <div className="card border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-              <p className="text-sm font-medium text-blue-800">
+              <p className="text-xs font-medium text-blue-800 sm:text-sm">
                 Tiền admin thu được (doanh thu − lương)
               </p>
-              <p className="mt-2 text-3xl font-bold text-blue-700">
+              <p className="mt-2 text-2xl font-bold text-blue-700 sm:text-3xl">
                 {formatCurrency(overview.adminNetIncome)}
               </p>
-              <p className="mt-1 text-sm text-blue-600">
+              <p className="mt-1 text-xs text-blue-600 sm:text-sm">
                 {formatCurrency(overview.totalRevenue)} doanh thu −{" "}
                 {formatCurrency(overview.totalSalary)} lương
               </p>
@@ -404,11 +404,11 @@ export default function AdminDashboard({ user }: { user: User }) {
             </div>
 
             <div>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <h2 className="text-base font-semibold sm:text-lg">
                   Thống kê doanh thu & lương theo ngày
                 </h2>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                   <MonthFilter
                     value={overviewMonth}
                     onChange={setOverviewMonth}
@@ -417,7 +417,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                   <button
                     type="button"
                     onClick={exportOverviewCsv}
-                    className="btn btn-secondary"
+                    className="btn btn-secondary w-full sm:w-auto"
                     disabled={filteredDayStats.length === 0}
                   >
                     Xuất CSV
@@ -429,53 +429,98 @@ export default function AdminDashboard({ user }: { user: User }) {
                   Chưa có dữ liệu doanh thu.
                 </div>
               ) : (
-                <div className="table-wrap">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Ngày</th>
-                        <th>Doanh thu</th>
-                        <th>Tổng lương</th>
-                        <th>Admin thu</th>
-                        <th>Số NV</th>
-                        <th>Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredDayStats.map((d) => (
-                        <tr key={d.id}>
-                          <td>{formatDate(d.date)}</td>
-                          <td>{formatCurrency(d.revenue)}</td>
-                          <td className="font-semibold text-emerald-700">
+                <>
+                  <div className="space-y-3 md:hidden">
+                    {filteredDayStats.map((d) => (
+                      <div key={d.id} className="mobile-record-card">
+                        <div className="mb-3 flex items-start justify-between gap-2">
+                          <p className="font-semibold text-slate-900">
+                            {formatDate(d.date)}
+                          </p>
+                          <span className="text-xs text-slate-500">
+                            {d.employeeCount} NV
+                          </span>
+                        </div>
+                        <dl>
+                          <dt>Doanh thu</dt>
+                          <dd>{formatCurrency(d.revenue)}</dd>
+                          <dt>Tổng lương</dt>
+                          <dd className="font-semibold text-emerald-700">
                             {formatCurrency(d.totalSalary)}
-                          </td>
-                          <td className="font-semibold text-blue-700">
+                          </dd>
+                          <dt>Admin thu</dt>
+                          <dd className="font-semibold text-blue-700">
                             {formatCurrency(d.adminNet)}
-                          </td>
-                          <td>{d.employeeCount}</td>
-                          <td>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => startEditRevenue(d)}
-                                className="btn btn-secondary px-2 py-1 text-xs"
-                              >
-                                Sửa
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => deleteRevenueDay(d)}
-                                className="btn btn-secondary px-2 py-1 text-xs text-red-600"
-                              >
-                                Xóa
-                              </button>
-                            </div>
-                          </td>
+                          </dd>
+                        </dl>
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => startEditRevenue(d)}
+                            className="btn btn-secondary flex-1 py-2 text-xs"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteRevenueDay(d)}
+                            className="btn btn-secondary flex-1 py-2 text-xs text-red-600"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="table-wrap hidden md:block">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Ngày</th>
+                          <th>Doanh thu</th>
+                          <th>Tổng lương</th>
+                          <th>Admin thu</th>
+                          <th>Số NV</th>
+                          <th>Thao tác</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {filteredDayStats.map((d) => (
+                          <tr key={d.id}>
+                            <td>{formatDate(d.date)}</td>
+                            <td>{formatCurrency(d.revenue)}</td>
+                            <td className="font-semibold text-emerald-700">
+                              {formatCurrency(d.totalSalary)}
+                            </td>
+                            <td className="font-semibold text-blue-700">
+                              {formatCurrency(d.adminNet)}
+                            </td>
+                            <td>{d.employeeCount}</td>
+                            <td>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditRevenue(d)}
+                                  className="btn btn-secondary px-2 py-1 text-xs"
+                                >
+                                  Sửa
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteRevenueDay(d)}
+                                  className="btn btn-secondary px-2 py-1 text-xs text-red-600"
+                                >
+                                  Xóa
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -544,31 +589,33 @@ export default function AdminDashboard({ user }: { user: User }) {
                 {dayStats.slice(0, 5).map((d) => (
                   <div
                     key={d.id}
-                    className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3"
+                    className="flex flex-col gap-3 rounded-xl bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium">{formatDate(d.date)}</p>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-xs text-slate-500 sm:text-sm">
                         Lương: {formatCurrency(d.totalSalary)} · Admin:{" "}
                         {formatCurrency(d.adminNet)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2 sm:justify-end">
                       <p className="font-semibold">{formatCurrency(d.revenue)}</p>
-                      <button
-                        type="button"
-                        onClick={() => startEditRevenue(d)}
-                        className="btn btn-secondary px-2 py-1 text-xs"
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteRevenueDay(d)}
-                        className="btn btn-secondary px-2 py-1 text-xs text-red-600"
-                      >
-                        Xóa
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => startEditRevenue(d)}
+                          className="btn btn-secondary px-2 py-1 text-xs"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteRevenueDay(d)}
+                          className="btn btn-secondary px-2 py-1 text-xs text-red-600"
+                        >
+                          Xóa
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -657,19 +704,19 @@ export default function AdminDashboard({ user }: { user: User }) {
                     <button
                       key={emp.id}
                       onClick={() => loadEmployeeDetail(emp.id)}
-                      className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition hover:bg-slate-50 ${
+                      className={`flex w-full flex-col gap-2 rounded-xl border px-4 py-3 text-left transition hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between ${
                         selectedEmployee?.employee.id === emp.id
                           ? "border-blue-500 bg-blue-50"
                           : "border-slate-200"
                       }`}
                     >
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium">{emp.name}</p>
                         <p className="text-sm text-slate-500">
                           @{emp.username} · {emp.salaryPercentage}%
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="sm:text-right">
                         <p className="font-semibold text-emerald-700">
                           {formatCurrency(emp.totalSalary)}
                         </p>
@@ -705,7 +752,7 @@ export default function AdminDashboard({ user }: { user: User }) {
 
                     <form
                       onSubmit={updateEmployeePercentage}
-                      className="mt-4 flex gap-3"
+                      className="mt-4 flex flex-col gap-3 sm:flex-row"
                     >
                       <div className="flex-1">
                         <label className="label">Đổi % lương (từ hôm nay)</label>
@@ -722,7 +769,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                       </div>
                       <button
                         type="submit"
-                        className="btn btn-primary self-end"
+                        className="btn btn-primary w-full sm:w-auto sm:self-end"
                       >
                         Cập nhật
                       </button>
@@ -730,7 +777,7 @@ export default function AdminDashboard({ user }: { user: User }) {
 
                     <form
                       onSubmit={resetEmployeePassword}
-                      className="mt-4 flex gap-3 border-t border-slate-100 pt-4"
+                      className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row"
                     >
                       <div className="flex-1">
                         <label className="label">
@@ -744,14 +791,17 @@ export default function AdminDashboard({ user }: { user: User }) {
                           placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
                         />
                       </div>
-                      <button type="submit" className="btn btn-secondary self-end">
+                      <button
+                        type="submit"
+                        className="btn btn-secondary w-full sm:w-auto sm:self-end"
+                      >
                         Đặt lại MK
                       </button>
                     </form>
                   </div>
 
                   <div>
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                       <h3 className="font-semibold">Lương theo ngày</h3>
                       <MonthFilter
                         value={employeeMonth}
@@ -774,10 +824,10 @@ export default function AdminDashboard({ user }: { user: User }) {
         )}
 
         {editingRevenue && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
             <form
               onSubmit={saveEditRevenue}
-              className="card w-full max-w-md space-y-4"
+              className="card max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-b-none sm:rounded-2xl"
             >
               <h3 className="text-lg font-semibold">Sửa doanh thu</h3>
               <p className="text-sm text-slate-500">

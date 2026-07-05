@@ -95,17 +95,17 @@ export default function EmployeeDashboard({ user }: { user: User }) {
         onOpenProfile={() => setTab("profile")}
       />
 
-      <main className="mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-6 flex flex-wrap gap-2">
+      <main className="mx-auto max-w-4xl px-4 py-4 sm:py-8">
+        <div className="tab-bar mb-4 sm:mb-6">
           <button
             onClick={() => setTab("salary")}
-            className={`btn ${tab === "salary" ? "btn-primary" : "btn-secondary"}`}
+            className={`btn whitespace-nowrap ${tab === "salary" ? "btn-primary" : "btn-secondary"}`}
           >
             Lương của tôi
           </button>
           <button
             onClick={() => setTab("profile")}
-            className={`btn ${tab === "profile" ? "btn-primary" : "btn-secondary"}`}
+            className={`btn whitespace-nowrap ${tab === "profile" ? "btn-primary" : "btn-secondary"}`}
           >
             Hồ sơ
           </button>
@@ -156,13 +156,13 @@ export default function EmployeeDashboard({ user }: { user: User }) {
 
             {todaySalary && (
               <div className="card border-emerald-200 bg-emerald-50">
-                <h2 className="font-semibold text-emerald-800">
+                <h2 className="text-sm font-semibold text-emerald-800 sm:text-base">
                   Lương ngày {formatDate(todaySalary.date)}
                 </h2>
-                <p className="mt-2 text-3xl font-bold text-emerald-700">
+                <p className="mt-2 text-2xl font-bold text-emerald-700 sm:text-3xl">
                   {formatCurrency(todaySalary.salary)}
                 </p>
-                <p className="mt-1 text-sm text-emerald-600">
+                <p className="mt-1 text-xs text-emerald-600 sm:text-sm">
                   Doanh thu: {formatCurrency(todaySalary.revenue)} ·{" "}
                   {todaySalary.percentageUsed}% lương
                 </p>
@@ -170,9 +170,9 @@ export default function EmployeeDashboard({ user }: { user: User }) {
             )}
 
             <div>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold">Lịch sử lương</h2>
-                <div className="flex flex-wrap items-center gap-2">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <h2 className="text-base font-semibold sm:text-lg">Lịch sử lương</h2>
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                   <MonthFilter
                     value={monthFilter}
                     onChange={setMonthFilter}
@@ -181,7 +181,7 @@ export default function EmployeeDashboard({ user }: { user: User }) {
                   <button
                     type="button"
                     onClick={exportMySalaryCsv}
-                    className="btn btn-secondary"
+                    className="btn btn-secondary w-full sm:w-auto"
                     disabled={filteredRecords.length === 0}
                   >
                     Xuất CSV

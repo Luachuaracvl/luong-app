@@ -170,9 +170,9 @@ export function ProfilePanel({
         <p className="text-sm text-slate-500">@{profile.username}</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
         <UserAvatar name={profile.name} avatarUrl={profile.avatarUrl} size="lg" />
-        <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
           <input
             ref={fileRef}
             type="file"
@@ -184,7 +184,7 @@ export function ProfilePanel({
             type="button"
             disabled={loading}
             onClick={() => fileRef.current?.click()}
-            className="btn btn-secondary"
+            className="btn btn-secondary flex-1 sm:flex-none"
           >
             Đổi avatar
           </button>
@@ -193,13 +193,15 @@ export function ProfilePanel({
               type="button"
               disabled={loading}
               onClick={removeAvatar}
-              className="btn btn-secondary ml-2"
+              className="btn btn-secondary flex-1 sm:flex-none"
             >
               Xóa avatar
             </button>
           )}
-          <p className="text-xs text-slate-400">JPG, PNG — tự nén trước khi lưu</p>
         </div>
+        <p className="w-full text-xs text-slate-400 sm:w-auto">
+          JPG, PNG — tự nén trước khi lưu
+        </p>
       </div>
 
       <form onSubmit={saveProfile} className="space-y-4">
@@ -258,7 +260,7 @@ export function ProfilePanel({
           <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
         )}
 
-        <button type="submit" disabled={loading} className="btn btn-primary">
+        <button type="submit" disabled={loading} className="btn btn-primary w-full sm:w-auto">
           {loading ? "Đang lưu..." : "Lưu thay đổi"}
         </button>
       </form>
