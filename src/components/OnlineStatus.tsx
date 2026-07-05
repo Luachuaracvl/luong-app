@@ -20,7 +20,7 @@ export function OnlineDot({
       className={`inline-block rounded-full border-2 border-white ${
         isOnline ? "bg-emerald-500" : "bg-slate-300"
       } ${className}`}
-      title={isOnline ? "Đang online" : "Offline"}
+      title={isOnline ? "Online" : "Offline"}
     />
   );
 }

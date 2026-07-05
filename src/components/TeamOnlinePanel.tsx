@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { AvatarWithStatus } from "./OnlineStatus";
-import { useOnlineCount, usePresence } from "./PresenceProvider";
+import { useOnlineCount, usePresence, usePresenceMap } from "./PresenceProvider";
 
 export type TeamMember = {
   id: string;
@@ -38,7 +38,7 @@ function TeamMemberRow({ member }: { member: TeamMember }) {
             : "bg-slate-200 text-slate-600"
         }`}
       >
-        {presence.online ? "Đang online" : "Offline"}
+        {presence.online ? "Online" : "Offline"}
       </span>
     </div>
   );
@@ -46,15 +46,17 @@ function TeamMemberRow({ member }: { member: TeamMember }) {
 
 export function TeamOnlinePanel({ members }: { members: TeamMember[] }) {
   const onlineCount = useOnlineCount();
+  const presenceMap = usePresenceMap();
 
-  const sorted = useMemo(
-    () =>
-      [...members].sort((a, b) => {
-        if (a.role !== b.role) return a.role === "ADMIN" ? -1 : 1;
-        return a.name.localeCompare(b.name, "vi");
-      }),
-    [members]
-  );
+  const sorted = useMemo(() => {
+    return [...members].sort((a, b) => {
+      const aOnline = presenceMap.get(a.id)?.online ? 0 : 1;
+      const bOnline = presenceMap.get(b.id)?.online ? 0 : 1;
+      if (aOnline !== bOnline) return aOnline - bOnline;
+      if (a.role !== b.role) return a.role === "ADMIN" ? -1 : 1;
+      return a.name.localeCompare(b.name, "vi");
+    });
+  }, [members, presenceMap]);
 
   return (
     <div className="card">
@@ -62,8 +64,18 @@ export function TeamOnlinePanel({ members }: { members: TeamMember[] }) {
         <div>
           <h3 className="font-semibold text-slate-900">Trạng thái team</h3>
           <p className="text-xs text-slate-500">
-            {onlineCount} / {members.length} đang online
+            {onlineCount} / {members.length} online
           </p>
+        </div>
+        <div className="flex items-center gap-2 text-[10px] font-medium text-slate-500">
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Online
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-slate-300" />
+            Offline
+          </span>
         </div>
       </div>
       <div className="max-h-64 space-y-2 overflow-y-auto">

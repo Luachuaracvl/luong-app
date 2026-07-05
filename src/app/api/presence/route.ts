@@ -11,7 +11,10 @@ export async function GET() {
   try {
     await requireSession();
     const presence = await getAllPresence();
-    return NextResponse.json({ presence: presenceMapToJson(presence) });
+    return NextResponse.json(
+      { presence: presenceMapToJson(presence) },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });

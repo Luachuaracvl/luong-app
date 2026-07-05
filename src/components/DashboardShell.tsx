@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { OnlineDot } from "./OnlineStatus";
-import { PresenceProvider } from "./PresenceProvider";
+import { PresenceProvider, usePresence } from "./PresenceProvider";
 import { UserAvatar } from "./UserAvatar";
 import { IconLogout } from "./Icons";
 
@@ -82,18 +82,7 @@ export function DashboardShell({
         </nav>
 
         <div className="sidebar-footer">
-          <div className="mb-2 flex items-center gap-3 rounded-xl bg-slate-800/60 px-3 py-2.5">
-            <div className="relative shrink-0">
-              <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
-              <OnlineDot userId={user.id} className="absolute bottom-0 right-0 h-2.5 w-2.5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{user.name}</p>
-              <p className="truncate text-xs text-slate-400">
-                {user.role === "ADMIN" ? "Quản trị viên" : "Nhân viên"}
-              </p>
-            </div>
-          </div>
+          <SidebarUserCard user={user} />
           <button
             type="button"
             onClick={logout}
@@ -106,6 +95,7 @@ export function DashboardShell({
       </aside>
 
       <div className={`main-area ${fullBleed ? "main-area-full" : ""}`}>
+        {!fullBleed && (
         <header className="topbar">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -133,6 +123,7 @@ export function DashboardShell({
             )}
           </div>
         </header>
+        )}
 
         <main className={fullBleed ? "page-content page-content-full" : "page-content"}>
           {children}
@@ -156,5 +147,30 @@ export function DashboardShell({
       </nav>
     </div>
     </PresenceProvider>
+  );
+}
+
+function SidebarUserCard({ user }: { user: User }) {
+  const presence = usePresence(user.id);
+
+  return (
+    <div className="mb-2 flex items-center gap-3 rounded-xl bg-slate-800/60 px-3 py-2.5">
+      <div className="relative shrink-0">
+        <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
+        <OnlineDot
+          userId={user.id}
+          online={presence.online}
+          className="absolute bottom-0 right-0 h-2.5 w-2.5"
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{user.name}</p>
+        <p className="truncate text-xs text-slate-400">
+          {user.role === "ADMIN" ? "Quản trị viên" : "Nhân viên"}
+          {" · "}
+          {presence.online ? "Online" : "Offline"}
+        </p>
+      </div>
+    </div>
   );
 }

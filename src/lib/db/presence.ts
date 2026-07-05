@@ -1,6 +1,6 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getDb } from "@/lib/firebase-admin";
-import { isOnlineByLastSeen, type PresenceInfo } from "@/lib/presence";
+import { resolvePresence, type PresenceInfo } from "@/lib/presence";
 import type { Role } from "@/lib/types";
 
 const COLLECTION = "userPresence";
@@ -12,6 +12,10 @@ export type UserPresenceDoc = {
   lastSeenAt: Timestamp;
   online?: boolean;
 };
+
+function timestampToIso(value?: Timestamp | null): string | null {
+  return value?.toDate?.()?.toISOString() ?? null;
+}
 
 export async function touchPresence(userId: string, name: string, role: Role) {
   await getDb()
@@ -49,10 +53,8 @@ export async function getAllPresence(): Promise<Map<string, PresenceInfo>> {
 
   for (const doc of snap.docs) {
     const data = doc.data() as UserPresenceDoc;
-    const lastSeenAt = data.lastSeenAt?.toDate?.()?.toISOString() ?? null;
-    const online =
-      data.online !== false && isOnlineByLastSeen(lastSeenAt);
-    map.set(doc.id, { online, lastSeenAt });
+    const lastSeenAt = timestampToIso(data.lastSeenAt);
+    map.set(doc.id, resolvePresence(lastSeenAt, data.online));
   }
 
   return map;
