@@ -16,7 +16,10 @@ function TeamMemberRow({ member }: { member: TeamMember }) {
   const presence = usePresence(member.id);
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2">
+    <div
+      className="flex items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2"
+      style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
+    >
       <AvatarWithStatus
         userId={member.id}
         name={member.name}
@@ -25,19 +28,13 @@ function TeamMemberRow({ member }: { member: TeamMember }) {
         online={presence.online}
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-800">{member.name}</p>
-        <p className="text-xs text-slate-500">
+        <p className="truncate text-sm font-medium text-fg">{member.name}</p>
+        <p className="text-xs text-muted">
           {member.role === "ADMIN" ? "Quản trị viên" : "Nhân viên"}
           {member.isActive === false ? " · Tạm ngưng" : ""}
         </p>
       </div>
-      <span
-        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-          presence.online
-            ? "bg-emerald-100 text-emerald-700"
-            : "bg-slate-200 text-slate-600"
-        }`}
-      >
+      <span className={`badge shrink-0 ${presence.online ? "badge-green" : "badge-gray"}`}>
         {presence.online ? "Online" : "Offline"}
       </span>
     </div>
@@ -62,18 +59,18 @@ export function TeamOnlinePanel({ members }: { members: TeamMember[] }) {
     <div className="card">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
-          <h3 className="font-semibold text-slate-900">Trạng thái team</h3>
-          <p className="text-xs text-slate-500">
+          <h3 className="font-semibold text-fg">Trạng thái team</h3>
+          <p className="text-xs text-muted">
             {onlineCount} / {members.length} online
           </p>
         </div>
-        <div className="flex items-center gap-2 text-[10px] font-medium text-slate-500">
+        <div className="flex items-center gap-2 text-[10px] font-medium text-subtle">
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
             Online
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-slate-300" />
+            <span className="h-2 w-2 rounded-full bg-zinc-600" />
             Offline
           </span>
         </div>

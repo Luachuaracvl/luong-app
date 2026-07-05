@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -19,7 +19,7 @@ export function SalaryTable({
 }) {
   if (records.length === 0) {
     return (
-      <div className="card text-center text-slate-500">
+      <div className="card text-center text-muted">
         Chưa có dữ liệu lương.
       </div>
     );
@@ -30,7 +30,7 @@ export function SalaryTable({
       <div className="space-y-3 md:hidden">
         {records.map((r) => (
           <div key={r.id} className="mobile-record-card">
-            <p className="mb-3 font-semibold text-slate-900">
+            <p className="mb-3 font-semibold text-fg">
               {formatDate(r.date)}
             </p>
             <dl>
@@ -43,7 +43,7 @@ export function SalaryTable({
               <dt>% lương</dt>
               <dd>{r.percentageUsed}%</dd>
               <dt>Lương</dt>
-              <dd className="font-semibold text-emerald-700">
+              <dd className="font-semibold text-success">
                 {formatCurrency(r.salary)}
               </dd>
             </dl>
@@ -67,7 +67,7 @@ export function SalaryTable({
                 <td>{formatDate(r.date)}</td>
                 {showRevenue && <td>{formatCurrency(r.revenue)}</td>}
                 <td>{r.percentageUsed}%</td>
-                <td className="font-semibold text-emerald-700">
+                <td className="font-semibold text-success">
                   {formatCurrency(r.salary)}
                 </td>
               </tr>

@@ -48,10 +48,10 @@ export default function LoginPage() {
         <div className="login-brand">
           <div className="login-logo">₫</div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+            <h1 className="text-xl font-semibold tracking-tight text-fg">
               Quản lý Lương
             </h1>
-            <p className="text-sm text-slate-500">Đăng nhập để tiếp tục</p>
+            <p className="text-sm text-muted">Đăng nhập để tiếp tục</p>
           </div>
         </div>
 

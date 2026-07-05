@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -185,7 +185,7 @@ export default function EmployeeDashboard({ user }: { user: User }) {
       {tab === "salary" && data && !loading && (
         <div className="space-y-6">
           {todaySalary ? (
-            <div className="hero-stat hero-stat-emerald text-white">
+            <div className="hero-stat hero-stat-emerald">
               <p className="text-sm font-medium text-emerald-100">
                 Lương hôm nay · {formatDate(todaySalary.date)}
               </p>
@@ -233,13 +233,13 @@ export default function EmployeeDashboard({ user }: { user: User }) {
                 {monthlySummary.slice(0, 6).map((row) => (
                   <div
                     key={row.month}
-                    className="rounded-xl border border-slate-100 bg-gradient-to-br from-white to-emerald-50/30 p-4"
+                    className="rounded-xl border border-zinc-800 bg-gradient-to-br from-white to-emerald-50/30 p-4"
                   >
                     <div className="flex items-center justify-between">
-                      <p className="font-semibold text-slate-800">{formatMonthLabel(row.month)}</p>
+                      <p className="font-semibold text-fg">{formatMonthLabel(row.month)}</p>
                       <span className="badge badge-green">{row.days} ngày</span>
                     </div>
-                    <p className="mt-2 text-xl font-bold text-emerald-700">
+                    <p className="mt-2 text-xl font-bold text-success">
                       {formatCurrency(row.salary)}
                     </p>
                   </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRef, useState } from "react";
 import { writeAvatar, readAvatar } from "@/lib/avatar-cache";
@@ -247,7 +247,7 @@ export function ProfilePanel({
             type="button"
             disabled={loading}
             onClick={() => fileRef.current?.click()}
-            className="group relative rounded-full ring-4 ring-indigo-100 transition hover:ring-indigo-200"
+            className="group relative rounded-full ring-4 ring-zinc-700 transition hover:ring-zinc-500"
             title="Bấm để đổi avatar"
           >
             <UserAvatar name={profile.name} avatarUrl={profile.avatarUrl} userId={profile.id} size="lg" />
@@ -255,8 +255,8 @@ export function ProfilePanel({
               Đổi ảnh
             </span>
           </button>
-          <h2 className="mt-4 text-lg font-bold text-slate-900">{profile.name}</h2>
-          <p className="text-sm text-slate-500">@{profile.username}</p>
+          <h2 className="mt-4 text-lg font-bold text-fg">{profile.name}</h2>
+          <p className="text-sm text-muted">@{profile.username}</p>
           <span className="badge badge-blue mt-2">
             {profile.role === "ADMIN" ? "Quản trị viên" : "Nhân viên"}
           </span>
@@ -280,19 +280,19 @@ export function ProfilePanel({
               </button>
             )}
           </div>
-          <p className="mt-3 text-xs text-slate-400">JPG, PNG — tối đa 5MB</p>
+          <p className="mt-3 text-xs text-subtle">JPG, PNG — tối đa 5MB</p>
         </div>
 
         <div className="space-y-6">
           <form onSubmit={saveName} className="card space-y-5">
           <div>
-            <h3 className="font-semibold text-slate-900">Thông tin tài khoản</h3>
-            <p className="text-sm text-slate-500">Avatar hiển thị trên chat và danh sách nhân viên</p>
+            <h3 className="font-semibold text-fg">Thông tin tài khoản</h3>
+            <p className="text-sm text-muted">Avatar hiển thị trên chat và danh sách nhân viên</p>
           </div>
 
           <div>
             <label className="label">Tên đăng nhập</label>
-            <input className="input bg-slate-50 text-slate-500" value={profile.username} readOnly />
+            <input className="input opacity-60" value={profile.username} readOnly />
           </div>
 
           <div>
@@ -315,8 +315,8 @@ export function ProfilePanel({
 
           <form onSubmit={savePassword} className="card card-section space-y-3">
           <div>
-            <h3 className="font-medium text-slate-800">Đổi mật khẩu</h3>
-            <p className="text-sm text-slate-500">Chỉ cần điền khi bạn muốn đổi mật khẩu</p>
+            <h3 className="font-medium text-fg">Đổi mật khẩu</h3>
+            <p className="text-sm text-muted">Chỉ cần điền khi bạn muốn đổi mật khẩu</p>
           </div>
           <div>
             <label className="label">Mật khẩu hiện tại</label>
@@ -354,7 +354,7 @@ export function ProfilePanel({
           </form>
 
           <div className="card card-section lg:hidden">
-            <p className="mb-3 text-sm text-slate-600">Thoát tài khoản trên thiết bị này</p>
+            <p className="mb-3 text-sm text-muted">Thoát tài khoản trên thiết bị này</p>
             <button
               type="button"
               onClick={async () => {

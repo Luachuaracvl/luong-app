@@ -25,6 +25,15 @@ export type DayRevenueDetail = {
   }[];
 };
 
+function StatBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="card-section">
+      <p className="text-xs font-medium text-muted">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-fg">{value}</p>
+    </div>
+  );
+}
+
 export function DayRevenueDetailPanel({
   detail,
   loading,
@@ -42,46 +51,32 @@ export function DayRevenueDetailPanel({
   }
 
   if (!detail) {
-    return <p className="py-6 text-center text-sm text-slate-500">Không có dữ liệu chi tiết</p>;
+    return <p className="py-6 text-center text-sm text-muted">Không có dữ liệu chi tiết</p>;
   }
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl bg-indigo-50 px-4 py-3">
-          <p className="text-xs font-medium text-indigo-600">Doanh thu ngày</p>
-          <p className="text-lg font-bold text-indigo-800">{formatCurrency(detail.revenue)}</p>
-        </div>
-        <div className="rounded-xl bg-emerald-50 px-4 py-3">
-          <p className="text-xs font-medium text-emerald-600">Tổng lương nhân viên</p>
-          <p className="text-lg font-bold text-emerald-800">{formatCurrency(detail.totalSalary)}</p>
-        </div>
-        <div className="rounded-xl bg-slate-50 px-4 py-3">
-          <p className="text-xs font-medium text-slate-600">Tổng % đã chia</p>
-          <p className="text-lg font-bold text-slate-800">{detail.totalPercentageUsed}%</p>
-        </div>
-        <div className="rounded-xl bg-violet-50 px-4 py-3">
-          <p className="text-xs font-medium text-violet-600">Admin thu về</p>
-          <p className="text-lg font-bold text-violet-800">{formatCurrency(detail.adminNet)}</p>
-        </div>
+        <StatBlock label="Doanh thu ngày" value={formatCurrency(detail.revenue)} />
+        <StatBlock label="Tổng lương nhân viên" value={formatCurrency(detail.totalSalary)} />
+        <StatBlock label="Tổng % đã chia" value={`${detail.totalPercentageUsed}%`} />
+        <StatBlock label="Admin thu về" value={formatCurrency(detail.adminNet)} />
       </div>
 
       {detail.note && (
-        <p className="rounded-xl bg-amber-50 px-4 py-2 text-sm text-amber-800">
-          Ghi chú: {detail.note}
-        </p>
+        <p className="alert alert-success text-sm">Ghi chú: {detail.note}</p>
       )}
 
       <div>
-        <p className="mb-2 text-sm font-medium text-slate-700">
+        <p className="mb-2 text-sm font-medium text-fg">
           Chia % cho {detail.employeeCount} nhân viên — {formatDate(detail.date)}
         </p>
-        <p className="mb-3 text-xs text-slate-500">
+        <p className="mb-3 text-xs text-muted">
           Lương mỗi người = doanh thu ngày × % áp dụng tại thời điểm tính lương
         </p>
 
         {detail.employees.length === 0 ? (
-          <p className="py-6 text-center text-sm text-slate-400">
+          <p className="py-6 text-center text-sm text-subtle">
             Chưa có bản ghi lương cho ngày này
           </p>
         ) : (
@@ -90,17 +85,22 @@ export function DayRevenueDetailPanel({
               {detail.employees.map((emp) => (
                 <div key={emp.userId} className="mobile-record-card">
                   <div className="mb-2 flex items-center gap-3">
-                    <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} userId={emp.userId} size="sm" />
+                    <UserAvatar
+                      name={emp.name}
+                      avatarUrl={emp.avatarUrl}
+                      userId={emp.userId}
+                      size="sm"
+                    />
                     <div>
-                      <p className="font-semibold text-slate-800">{emp.name}</p>
-                      <p className="text-xs text-slate-500">@{emp.username}</p>
+                      <p className="font-medium text-fg">{emp.name}</p>
+                      <p className="text-xs text-muted">@{emp.username}</p>
                     </div>
                   </div>
                   <dl>
                     <dt>% áp dụng</dt>
-                    <dd className="font-semibold text-indigo-700">{emp.percentageUsed}%</dd>
+                    <dd className="font-semibold text-fg">{emp.percentageUsed}%</dd>
                     <dt>Lương nhận</dt>
-                    <dd className="font-semibold text-emerald-700">{formatCurrency(emp.salary)}</dd>
+                    <dd className="font-semibold text-success">{formatCurrency(emp.salary)}</dd>
                   </dl>
                   {!emp.isActive && <span className="badge badge-red mt-2">Đã ngưng</span>}
                 </div>
@@ -127,18 +127,25 @@ export function DayRevenueDetailPanel({
                       <tr key={emp.userId}>
                         <td>
                           <div className="flex items-center gap-3">
-                            <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} userId={emp.userId} size="sm" />
+                            <UserAvatar
+                              name={emp.name}
+                              avatarUrl={emp.avatarUrl}
+                              userId={emp.userId}
+                              size="sm"
+                            />
                             <div>
-                              <p className="font-medium text-slate-800">{emp.name}</p>
-                              <p className="text-xs text-slate-500">
+                              <p className="font-medium text-fg">{emp.name}</p>
+                              <p className="text-xs text-muted">
                                 @{emp.username}
                                 {!emp.isActive ? " · Tạm ngưng" : ""}
                               </p>
                             </div>
                           </div>
                         </td>
-                        <td className="font-semibold text-indigo-700">{emp.percentageUsed}%</td>
-                        <td className="font-semibold text-emerald-700">{formatCurrency(emp.salary)}</td>
+                        <td className="font-semibold text-fg">{emp.percentageUsed}%</td>
+                        <td className="font-semibold text-success">
+                          {formatCurrency(emp.salary)}
+                        </td>
                         <td>{share}%</td>
                       </tr>
                     );

@@ -18,7 +18,7 @@ export function RevenueChart({ data }: { data: ChartPoint[] }) {
   const points = [...data].slice(0, 7).reverse();
   if (points.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-slate-400">
+      <div className="flex h-48 items-center justify-center text-sm text-subtle">
         Chưa có dữ liệu biểu đồ
       </div>
     );
@@ -39,7 +39,7 @@ export function RevenueChart({ data }: { data: ChartPoint[] }) {
             >
               <div className="flex h-32 w-full items-end justify-center gap-0.5 sm:h-36 sm:gap-1">
                 <div
-                  className="chart-bar w-[45%] opacity-90"
+                  className="chart-bar w-[45%]"
                   style={{ height: `${revH}%` }}
                   title={`Doanh thu: ${formatCurrency(p.revenue)}`}
                 />
@@ -49,23 +49,23 @@ export function RevenueChart({ data }: { data: ChartPoint[] }) {
                   title={`Lương: ${formatCurrency(p.totalSalary)}`}
                 />
               </div>
-              <span className="w-full truncate text-center text-[10px] font-medium text-slate-400 sm:text-xs">
+              <span className="w-full truncate text-center text-[10px] font-medium text-subtle sm:text-xs">
                 {formatDate(p.date).slice(0, 5)}
               </span>
-              <span className="w-full truncate text-center text-[9px] text-slate-500 sm:hidden">
+              <span className="w-full truncate text-center text-[9px] text-muted sm:hidden">
                 {shortMoney(p.revenue)}
               </span>
             </div>
           );
         })}
       </div>
-      <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+      <div className="flex flex-wrap gap-4 text-xs text-muted">
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-indigo-500" />
+          <span className="chart-bar h-2.5 w-2.5 rounded-sm" />
           Doanh thu
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-emerald-400" />
+          <span className="chart-bar-secondary h-2.5 w-2.5 rounded-sm" />
           Lương
         </span>
       </div>

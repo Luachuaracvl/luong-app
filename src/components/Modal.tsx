@@ -26,12 +26,10 @@ export function Modal({
       >
         <div className="modal-handle" aria-hidden />
         <div>
-          <h3 id="modal-title" className="pr-8 text-lg font-semibold text-slate-900">
+          <h3 id="modal-title" className="pr-8 text-lg font-semibold text-fg">
             {title}
           </h3>
-          {description && (
-            <p className="mt-1 text-sm text-slate-500">{description}</p>
-          )}
+          {description && <p className="mt-1 text-sm text-muted">{description}</p>}
         </div>
         {children}
       </div>

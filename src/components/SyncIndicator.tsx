@@ -17,12 +17,12 @@ export function SyncIndicator({
     >
       {syncing ? (
         <>
-          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-zinc-300" />
           Đang đồng bộ...
         </>
       ) : (
         <>
-          <span className="text-emerald-500">✓</span>
+          <span className="text-success">✓</span>
           {label ?? "Đã lưu"}
         </>
       )}

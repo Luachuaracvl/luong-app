@@ -1,17 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f1f5f9;
-  --foreground: #0f172a;
-  --primary: #4f46e5;
-  --primary-dark: #4338ca;
-  --sidebar: #0f172a;
-  --sidebar-hover: #1e293b;
-  --accent-emerald: #059669;
-  --accent-amber: #d97706;
-  --card-shadow: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06);
-  --card-shadow-lg: 0 10px 40px -10px rgb(15 23 42 / 0.12);
+  --bg: #09090b;
+  --bg-elevated: #0f0f12;
+  --surface: #141417;
+  --surface-hover: #1c1c21;
+  --surface-muted: #18181b;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.11);
+  --text: #fafafa;
+  --text-muted: #a1a1aa;
+  --text-subtle: #71717a;
+  --accent: #e4e4e7;
+  --accent-soft: rgba(255, 255, 255, 0.06);
+  --success: #86efac;
+  --danger: #fca5a5;
+  --warning: #fcd34d;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
   --bottom-nav-height: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  color-scheme: dark;
 }
 
 html {
@@ -19,8 +28,8 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   overflow-x: hidden;
 }
@@ -35,34 +44,48 @@ button {
 /* Layout */
 .app-shell {
   @apply flex min-h-screen;
+  background: var(--bg);
 }
 
 .sidebar {
-  @apply fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-800 bg-slate-900 text-white lg:flex;
+  @apply fixed inset-y-0 left-0 z-40 hidden w-60 flex-col lg:flex;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
 }
 
 .sidebar-brand {
-  @apply flex items-center gap-3 border-b border-slate-800 px-5 py-5;
+  @apply flex items-center gap-3 px-5 py-5;
+  border-bottom: 1px solid var(--border);
 }
 
 .sidebar-nav {
-  @apply flex-1 space-y-1 overflow-y-auto p-3;
+  @apply flex-1 space-y-0.5 overflow-y-auto p-3;
 }
 
 .sidebar-link {
-  @apply flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white;
+  @apply flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5 text-sm font-medium transition;
+  color: var(--text-muted);
+}
+
+.sidebar-link:hover {
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
 .sidebar-link-active {
-  @apply bg-indigo-600 text-white shadow-lg shadow-indigo-900/30 hover:bg-indigo-600 hover:text-white;
+  background: var(--surface-hover);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
 }
 
 .sidebar-footer {
-  @apply border-t border-slate-800 p-3;
+  border-top: 1px solid var(--border);
+  @apply p-3;
 }
 
 .main-area {
-  @apply flex min-h-screen flex-1 flex-col lg:ml-64;
+  @apply flex min-h-screen flex-1 flex-col lg:ml-60;
+  background: var(--bg);
 }
 
 .main-area-full {
@@ -70,9 +93,12 @@ button {
 }
 
 .topbar {
-  @apply sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-md sm:px-6 sm:py-4;
+  @apply sticky top-0 z-30 px-4 sm:px-6 sm:py-4;
   padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
   padding-bottom: 0.75rem;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
 }
 
 .page-content {
@@ -101,55 +127,99 @@ button {
 }
 
 .bottom-nav {
-  @apply fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white/95 px-1 backdrop-blur-md lg:hidden;
+  @apply fixed inset-x-0 bottom-0 z-40 flex px-2 lg:hidden;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(16px);
 }
 
 .bottom-nav-link {
-  @apply flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-[11px] font-medium leading-tight text-slate-500 transition active:bg-slate-100;
+  @apply flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] px-0.5 py-1 text-[11px] font-medium leading-tight transition;
+  color: var(--text-subtle);
 }
 
 .bottom-nav-link-active {
-  @apply bg-indigo-50 text-indigo-600;
+  color: var(--text);
+  background: var(--accent-soft);
 }
 
 /* Cards & buttons */
 .card {
-  @apply rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6;
-  box-shadow: var(--card-shadow);
+  @apply rounded-[var(--radius-lg)] p-4 sm:p-6;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 .card-elevated {
-  @apply rounded-2xl border border-slate-200/60 bg-white p-4 sm:p-6;
-  box-shadow: var(--card-shadow-lg);
+  @apply rounded-[var(--radius-lg)] p-4 sm:p-6;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-strong);
 }
 
 .card-section {
-  @apply rounded-xl border border-slate-100 bg-slate-50/80 p-4;
+  @apply rounded-[var(--radius-md)] p-4;
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
 }
 
 .btn {
-  @apply inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition disabled:opacity-50 sm:min-h-0 sm:px-4 sm:py-2.5;
+  @apply inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-sm)] px-3 py-2.5 text-sm font-medium transition disabled:opacity-40 sm:min-h-0 sm:px-4 sm:py-2.5;
 }
 
 .btn-primary {
-  @apply bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700;
+  background: var(--text);
+  color: var(--bg);
+}
+
+.btn-primary:hover {
+  background: #fff;
 }
 
 .btn-secondary {
-  @apply border border-slate-200 bg-white text-slate-700 hover:bg-slate-50;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+}
+
+.btn-secondary:hover {
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
 .btn-danger {
-  @apply border border-red-200 bg-red-50 text-red-600 hover:bg-red-100;
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--danger);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.btn-danger:hover {
+  background: rgba(248, 113, 113, 0.14);
 }
 
 .btn-ghost {
-  @apply text-slate-600 hover:bg-slate-100;
+  color: var(--text-muted);
+}
+
+.btn-ghost:hover {
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
 .input {
-  @apply w-full min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-base outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 sm:min-h-0 sm:text-sm;
+  @apply w-full min-h-11 rounded-[var(--radius-sm)] px-4 py-2.5 text-base outline-none transition sm:min-h-0 sm:text-sm;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.input::placeholder {
+  color: var(--text-subtle);
+}
+
+.input:focus {
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
 }
 
 .btn-row {
@@ -161,48 +231,79 @@ button {
 }
 
 .label {
-  @apply mb-1.5 block text-sm font-medium text-slate-700;
+  @apply mb-1.5 block text-sm font-medium;
+  color: var(--text-muted);
+}
+
+.text-fg {
+  color: var(--text);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-subtle {
+  color: var(--text-subtle);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+.text-success {
+  color: var(--success);
+}
+
+.text-danger {
+  color: var(--danger);
 }
 
 /* Stats */
 .stat-card {
-  @apply relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5;
-  box-shadow: var(--card-shadow);
-}
-
-.stat-card-accent {
-  @apply border-0 text-white;
+  @apply relative overflow-hidden rounded-[var(--radius-lg)] p-4 sm:p-5;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 .stat-value {
-  @apply text-xl font-bold tracking-tight text-slate-900 sm:text-2xl;
+  @apply text-xl font-semibold tracking-tight sm:text-2xl;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-label {
-  @apply text-sm font-medium text-slate-500;
+  @apply text-sm font-medium;
+  color: var(--text-muted);
 }
 
 .hero-stat {
-  @apply relative overflow-hidden rounded-2xl p-5 sm:p-6;
-  background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #6366f1 100%);
-  box-shadow: 0 20px 50px -12px rgb(67 56 202 / 0.45);
-}
-
-.hero-stat::after {
-  content: "";
-  @apply pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10;
+  @apply relative overflow-hidden rounded-[var(--radius-lg)] p-5 sm:p-6;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-strong);
 }
 
 .hero-stat-emerald {
-  background: linear-gradient(135deg, #064e3b 0%, #059669 50%, #10b981 100%);
-  box-shadow: 0 20px 50px -12px rgb(5 150 105 / 0.4);
+  background: linear-gradient(145deg, rgba(34, 197, 94, 0.08) 0%, var(--surface) 100%);
+  border-color: rgba(134, 239, 172, 0.15);
+}
+
+.hero-stat .stat-value,
+.hero-stat p {
+  color: var(--text);
+}
+
+.hero-stat .text-muted,
+.hero-stat .stat-label {
+  color: var(--text-muted);
 }
 
 /* Tables */
 .table-wrap {
-  @apply overflow-x-auto rounded-2xl border border-slate-200/80 bg-white;
+  @apply overflow-x-auto rounded-[var(--radius-lg)];
+  background: var(--surface);
+  border: 1px solid var(--border);
   -webkit-overflow-scrolling: touch;
-  box-shadow: var(--card-shadow);
 }
 
 table.data-table {
@@ -210,15 +311,20 @@ table.data-table {
 }
 
 table.data-table th {
-  @apply border-b border-slate-100 bg-slate-50/80 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-4 sm:py-3;
+  @apply px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider sm:px-4 sm:py-3;
+  color: var(--text-subtle);
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
 }
 
 table.data-table td {
-  @apply border-b border-slate-50 px-3 py-2.5 sm:px-4 sm:py-3;
+  @apply px-3 py-2.5 sm:px-4 sm:py-3;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
 }
 
 table.data-table tbody tr:hover td {
-  @apply bg-slate-50/50;
+  background: var(--accent-soft);
 }
 
 table.data-table tr:last-child td {
@@ -226,8 +332,9 @@ table.data-table tr:last-child td {
 }
 
 .mobile-record-card {
-  @apply rounded-xl border border-slate-200/80 bg-white p-4;
-  box-shadow: var(--card-shadow);
+  @apply rounded-[var(--radius-md)] p-4;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 .mobile-record-card dl {
@@ -235,79 +342,103 @@ table.data-table tr:last-child td {
 }
 
 .mobile-record-card dt {
-  @apply text-slate-500;
+  color: var(--text-subtle);
 }
 
 .mobile-record-card dd {
-  @apply break-all text-right font-medium text-slate-900;
+  @apply break-all text-right font-medium;
+  color: var(--text);
 }
 
 .alert-dismiss {
-  @apply flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-base opacity-70 transition active:bg-black/5 active:opacity-100;
+  @apply flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-base opacity-70 transition;
+  color: var(--text-muted);
+}
+
+.alert-dismiss:active {
+  background: var(--accent-soft);
+  opacity: 1;
 }
 
 /* Badges & alerts */
 .badge {
-  @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium;
 }
 
 .badge-green {
-  @apply bg-emerald-100 text-emerald-700;
+  background: rgba(134, 239, 172, 0.12);
+  color: var(--success);
 }
 
 .badge-blue {
-  @apply bg-indigo-100 text-indigo-700;
+  background: var(--accent-soft);
+  color: var(--text-muted);
 }
 
 .badge-gray {
-  @apply bg-slate-100 text-slate-600;
+  background: var(--accent-soft);
+  color: var(--text-subtle);
 }
 
 .badge-red {
-  @apply bg-red-100 text-red-700;
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--danger);
 }
 
 .alert {
-  @apply flex items-start gap-3 rounded-xl px-4 py-3 text-sm;
+  @apply flex items-start gap-3 rounded-[var(--radius-md)] px-4 py-3 text-sm;
 }
 
 .alert-success {
-  @apply border border-emerald-200 bg-emerald-50 text-emerald-800;
+  background: rgba(134, 239, 172, 0.08);
+  border: 1px solid rgba(134, 239, 172, 0.18);
+  color: var(--success);
 }
 
 .alert-error {
-  @apply border border-red-200 bg-red-50 text-red-700;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.18);
+  color: var(--danger);
 }
 
 /* Chart */
 .chart-bar {
-  @apply rounded-t-md bg-indigo-500 transition-all duration-500;
+  @apply rounded-t-sm transition-all duration-500;
+  background: rgba(255, 255, 255, 0.72);
   min-height: 4px;
 }
 
 .chart-bar-secondary {
-  @apply rounded-t-md bg-emerald-400/80;
+  @apply rounded-t-sm;
+  background: rgba(255, 255, 255, 0.28);
   min-height: 4px;
 }
 
 /* Modal */
 .modal-overlay {
-  @apply fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-sm sm:items-center sm:p-4;
+  @apply fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
 }
 
 .modal-panel {
-  @apply max-h-[min(90dvh,640px)] w-full max-w-md overflow-y-auto rounded-t-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:max-h-[90vh] sm:rounded-2xl sm:p-6;
-  box-shadow: var(--card-shadow);
+  @apply max-h-[min(90dvh,640px)] w-full max-w-md overflow-y-auto rounded-t-[var(--radius-lg)] p-4 sm:max-h-[90vh] sm:rounded-[var(--radius-lg)] sm:p-6;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-strong);
   padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
 }
 
 .modal-handle {
-  @apply mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-slate-200 sm:hidden;
+  @apply mx-auto mb-3 h-1 w-10 shrink-0 rounded-full sm:hidden;
+  background: var(--border-strong);
 }
 
 .sync-indicator {
-  @apply fixed left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-4 py-2.5 text-sm font-medium text-slate-700 shadow-lg backdrop-blur-md;
+  @apply fixed left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium backdrop-blur-md;
   bottom: calc(var(--bottom-nav-height) + 0.75rem);
+  background: color-mix(in srgb, var(--surface-hover) 94%, transparent);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
 }
 
 @media (min-width: 1024px) {
@@ -318,7 +449,9 @@ table.data-table tr:last-child td {
 
 /* Empty state */
 .empty-state {
-  @apply flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center;
+  @apply flex flex-col items-center justify-center rounded-[var(--radius-lg)] px-6 py-12 text-center;
+  border: 1px dashed var(--border-strong);
+  background: var(--accent-soft);
 }
 
 /* Login */
@@ -327,22 +460,14 @@ table.data-table tr:last-child td {
   padding-top: max(2rem, env(safe-area-inset-top, 0px));
   padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
   background:
-    radial-gradient(circle at 50% 0%, rgb(99 102 241 / 0.12), transparent 42%),
-    linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
-}
-
-.login-shell::before {
-  content: "";
-  @apply pointer-events-none absolute inset-0 opacity-30;
-  background-image: radial-gradient(rgb(148 163 184 / 0.35) 1px, transparent 1px);
-  background-size: 24px 24px;
+    radial-gradient(circle at 50% -10%, rgba(255, 255, 255, 0.04), transparent 45%),
+    var(--bg);
 }
 
 .login-card {
-  @apply relative w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl sm:p-8;
-  box-shadow:
-    0 20px 45px -20px rgb(15 23 42 / 0.18),
-    0 1px 2px rgb(15 23 42 / 0.06);
+  @apply relative w-full max-w-md rounded-[var(--radius-lg)] p-6 sm:p-8;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
 }
 
 .login-brand {
@@ -350,21 +475,27 @@ table.data-table tr:last-child td {
 }
 
 .login-logo {
-  @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-bold text-white shadow-lg shadow-indigo-600/25;
+  @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-lg font-semibold;
+  background: var(--text);
+  color: var(--bg);
 }
 
 /* Skeleton */
 .skeleton {
-  @apply animate-pulse rounded-lg bg-slate-200;
+  @apply animate-pulse rounded-lg;
+  background: var(--surface-hover);
 }
 
-/* Chat — bubble UI, mobile-first */
+/* Chat */
 .chat-app {
-  @apply flex h-full min-h-0 w-full flex-1 overflow-hidden bg-slate-50;
+  @apply flex h-full min-h-0 w-full flex-1 overflow-hidden;
+  background: var(--bg);
 }
 
 .chat-sidebar {
-  @apply hidden h-full min-h-0 w-full shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white lg:flex lg:w-72;
+  @apply hidden h-full min-h-0 w-full shrink-0 flex-col overflow-y-auto lg:flex lg:w-72;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
 }
 
 .chat-sidebar-open {
@@ -372,19 +503,28 @@ table.data-table tr:last-child td {
 }
 
 .chat-sidebar-header {
-  @apply border-b border-slate-100 px-4 py-3;
+  @apply px-4 py-3;
+  border-bottom: 1px solid var(--border);
 }
 
 .chat-sidebar-item {
-  @apply flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-700 transition active:bg-slate-100;
+  @apply flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5 text-left text-sm transition;
+  color: var(--text-muted);
+}
+
+.chat-sidebar-item:active {
+  background: var(--accent-soft);
 }
 
 .chat-sidebar-item-active {
-  @apply bg-indigo-50 font-medium text-indigo-700;
+  background: var(--surface-hover);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
 }
 
 .chat-shell {
-  @apply hidden h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white lg:flex;
+  @apply hidden h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex;
+  background: var(--bg);
 }
 
 .chat-shell-open {
@@ -392,23 +532,35 @@ table.data-table tr:last-child td {
 }
 
 .chat-segment {
-  @apply flex shrink-0 gap-1 border-b border-slate-100 bg-white p-2 lg:hidden;
+  @apply flex shrink-0 gap-1 p-2 lg:hidden;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
 }
 
 .chat-segment-btn {
-  @apply min-h-11 flex-1 rounded-xl text-sm font-medium text-slate-600 transition active:bg-slate-100;
+  @apply min-h-11 flex-1 rounded-[var(--radius-sm)] text-sm font-medium transition;
+  color: var(--text-subtle);
 }
 
 .chat-segment-btn-active {
-  @apply bg-indigo-600 text-white active:bg-indigo-700;
+  background: var(--surface-hover);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
 }
 
 .chat-header {
-  @apply flex shrink-0 items-center gap-2 border-b border-slate-100 bg-white px-3 py-2.5;
+  @apply flex shrink-0 items-center gap-2 px-3 py-2.5;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
 }
 
 .chat-back-btn {
-  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-600 active:bg-slate-100;
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition;
+  color: var(--text-muted);
+}
+
+.chat-back-btn:active {
+  background: var(--accent-soft);
 }
 
 .chat-messages {
@@ -425,15 +577,18 @@ table.data-table tr:last-child td {
 }
 
 .chat-bubble {
-  @apply max-w-[85%] rounded-2xl px-3 py-2 text-sm sm:max-w-[70%];
+  @apply max-w-[85%] rounded-[var(--radius-md)] px-3 py-2 text-sm sm:max-w-[70%];
 }
 
 .chat-bubble-other {
-  @apply rounded-tl-md bg-slate-100 text-slate-800;
+  background: var(--surface-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .chat-bubble-me {
-  @apply rounded-tr-md bg-indigo-600 text-white;
+  background: var(--text);
+  color: var(--bg);
 }
 
 .chat-meta {
@@ -441,28 +596,43 @@ table.data-table tr:last-child td {
 }
 
 .chat-meta-other {
-  @apply text-slate-500;
+  color: var(--text-subtle);
 }
 
 .chat-time {
   @apply mt-1 text-[10px];
+  opacity: 0.55;
 }
 
 .chat-input-bar {
-  @apply flex shrink-0 items-end gap-2 border-t border-slate-100 bg-white p-2 sm:p-3;
+  @apply flex shrink-0 items-end gap-2 p-2 sm:p-3;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
 }
 
 .chat-input {
-  @apply max-h-[120px] min-h-11 flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 leading-normal text-slate-900 outline-none focus:border-indigo-300 focus:bg-white;
+  @apply max-h-[120px] min-h-11 flex-1 resize-none rounded-[var(--radius-md)] px-4 py-2.5 leading-normal outline-none;
   font-size: 16px;
   touch-action: manipulation;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.chat-input:focus {
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .chat-send-btn {
-  @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white transition active:scale-95 disabled:bg-slate-300;
+  @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 disabled:opacity-30;
+  background: var(--text);
+  color: var(--bg);
 }
 
 .chat-error {
-  @apply shrink-0 border-t border-red-100 bg-red-50 px-4 py-2 text-sm text-red-600;
+  @apply shrink-0 px-4 py-2 text-sm;
+  border-top: 1px solid rgba(248, 113, 113, 0.2);
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--danger);
 }

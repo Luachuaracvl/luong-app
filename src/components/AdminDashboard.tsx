@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertBanner } from "./AlertBanner";
@@ -732,14 +732,14 @@ export default function AdminDashboard({ user }: { user: User }) {
 
       {tab === "overview" && !loading && (
         <div className="space-y-6">
-          <div className="hero-stat text-white">
-            <p className="text-sm font-medium text-indigo-100">
+          <div className="hero-stat">
+            <p className="text-sm font-medium text-muted">
               Tiền admin thu được (doanh thu − lương)
             </p>
             <p className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
               {formatCurrency(overview.adminNetIncome)}
             </p>
-            <p className="mt-2 text-sm text-indigo-100/90">
+            <p className="mt-2 text-sm text-muted">
               {formatCurrency(overview.totalRevenue)} doanh thu −{" "}
               {formatCurrency(overview.totalSalary)} lương đã trả
             </p>
@@ -809,7 +809,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                           <button
                             type="button"
                             onClick={() => void openDayDetail(d)}
-                            className="text-left text-indigo-700 hover:underline"
+                            className="text-left text-fg hover:underline"
                           >
                             {formatDate(d.date)}
                           </button>
@@ -820,9 +820,9 @@ export default function AdminDashboard({ user }: { user: User }) {
                         <dt>Doanh thu</dt>
                         <dd>{formatCurrency(d.revenue)}</dd>
                         <dt>Tổng lương</dt>
-                        <dd className="font-semibold text-emerald-700">{formatCurrency(d.totalSalary)}</dd>
+                        <dd className="font-semibold text-success">{formatCurrency(d.totalSalary)}</dd>
                         <dt>Admin thu</dt>
-                        <dd className="font-semibold text-indigo-700">{formatCurrency(d.adminNet)}</dd>
+                        <dd className="font-semibold text-fg">{formatCurrency(d.adminNet)}</dd>
                       </dl>
                       <div className="mt-3">{renderDayStatActions(d)}</div>
                     </div>
@@ -850,14 +850,14 @@ export default function AdminDashboard({ user }: { user: User }) {
                             <button
                               type="button"
                               onClick={() => void openDayDetail(d)}
-                              className="text-left font-medium text-indigo-700 hover:underline"
+                              className="text-left font-medium text-fg hover:underline"
                             >
                               {formatDate(d.date)}
                             </button>
                           </td>
                           <td>{formatCurrency(d.revenue)}</td>
-                          <td className="font-semibold text-emerald-700">{formatCurrency(d.totalSalary)}</td>
-                          <td className="font-semibold text-indigo-700">{formatCurrency(d.adminNet)}</td>
+                          <td className="font-semibold text-success">{formatCurrency(d.totalSalary)}</td>
+                          <td className="font-semibold text-fg">{formatCurrency(d.adminNet)}</td>
                           <td>{d.employeeCount}</td>
                           <td>{renderDayStatActions(d)}</td>
                         </tr>
@@ -903,23 +903,23 @@ export default function AdminDashboard({ user }: { user: User }) {
             ) : (
               <div className="space-y-2">
                 {dayStats.slice(0, 5).map((d) => (
-                  <div key={d.id} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div key={d.id} className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="font-semibold text-slate-800">
+                      <p className="font-semibold text-fg">
                         <button
                           type="button"
                           onClick={() => void openDayDetail(d)}
-                          className="hover:text-indigo-700 hover:underline"
+                          className="hover:text-fg hover:underline"
                         >
                           {formatDate(d.date)}
                         </button>
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted">
                         Lương {formatCurrency(d.totalSalary)} · Admin {formatCurrency(d.adminNet)}
                       </p>
                     </div>
                     <div className="flex items-center justify-between gap-3 sm:justify-end">
-                      <p className="text-lg font-bold text-indigo-700">{formatCurrency(d.revenue)}</p>
+                      <p className="text-lg font-bold text-fg">{formatCurrency(d.revenue)}</p>
                       {renderDayStatActions(d)}
                     </div>
                   </div>
@@ -960,7 +960,7 @@ export default function AdminDashboard({ user }: { user: User }) {
             <div className="card">
               <SectionHeader title={`Danh sách (${filteredEmployees.length})`} />
               <div className="relative mb-3">
-                <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
                 <input
                   className="input pl-10"
                   placeholder="Tìm theo tên hoặc username..."
@@ -970,32 +970,32 @@ export default function AdminDashboard({ user }: { user: User }) {
               </div>
               <div className="max-h-[420px] space-y-2 overflow-y-auto">
                 {filteredEmployees.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-slate-400">Không tìm thấy nhân viên</p>
+                  <p className="py-6 text-center text-sm text-subtle">Không tìm thấy nhân viên</p>
                 ) : (
                   filteredEmployees.map((emp) => (
                     <button
                       key={emp.id}
                       type="button"
                       onClick={() => loadEmployeeDetail(emp.id)}
-                      className={`flex w-full flex-col gap-2 rounded-xl border px-4 py-3 text-left transition active:bg-slate-50 sm:flex-row sm:items-center sm:gap-3 sm:hover:shadow-sm ${
+                      className={`flex w-full flex-col gap-2 rounded-xl border px-4 py-3 text-left transition active:bg-zinc-900/40 sm:flex-row sm:items-center sm:gap-3 sm:hover:shadow-sm ${
                         selectedEmployee?.employee.id === emp.id
-                          ? "border-indigo-300 bg-indigo-50/80 ring-1 ring-indigo-200"
-                          : "border-slate-100 hover:border-slate-200"
+                          ? "border-zinc-600 bg-zinc-800/50/80 ring-1 ring-zinc-700"
+                          : "border-zinc-800 hover:border-zinc-800"
                       }`}
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-3">
                         <AvatarWithStatus name={emp.name} avatarUrl={emp.avatarUrl} userId={emp.id} size="md" />
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-slate-800">{emp.name}</p>
+                            <p className="font-semibold text-fg">{emp.name}</p>
                             {!emp.isActive && <span className="badge badge-red">Tạm ngưng</span>}
                           </div>
-                          <p className="text-sm text-slate-500">@{emp.username} · {emp.salaryPercentage}%</p>
+                          <p className="text-sm text-muted">@{emp.username} · {emp.salaryPercentage}%</p>
                         </div>
                       </div>
-                      <div className="border-t border-slate-100 pt-2 sm:border-0 sm:pt-0 sm:text-right">
-                        <p className="font-bold text-emerald-700">{formatCurrency(emp.totalSalary)}</p>
-                        <p className="text-xs text-slate-400">Tổng lương</p>
+                      <div className="border-t border-zinc-800 pt-2 sm:border-0 sm:pt-0 sm:text-right">
+                        <p className="font-bold text-success">{formatCurrency(emp.totalSalary)}</p>
+                        <p className="text-xs text-subtle">Tổng lương</p>
                       </div>
                     </button>
                   ))
@@ -1019,14 +1019,14 @@ export default function AdminDashboard({ user }: { user: User }) {
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-xl font-bold text-slate-900">
+                            <h2 className="text-xl font-bold text-fg">
                               {selectedEmployee.employee.name}
                             </h2>
                             <span className={`badge ${selectedEmployee.employee.isActive ? "badge-green" : "badge-red"}`}>
                               {selectedEmployee.employee.isActive ? "Đang hoạt động" : "Tạm ngưng"}
                             </span>
                           </div>
-                          <p className="text-sm text-slate-500">@{selectedEmployee.employee.username}</p>
+                          <p className="text-sm text-muted">@{selectedEmployee.employee.username}</p>
                         </div>
                         <button type="button" onClick={toggleEmployeeActive} className={`btn ${selectedEmployee.employee.isActive ? "btn-danger" : "btn-primary"}`}>
                           {selectedEmployee.employee.isActive ? "Tạm ngưng" : "Kích hoạt lại"}
@@ -1040,7 +1040,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                     <StatCard label="Tổng doanh thu (đã tính)" value={selectedEmployee.totalRevenue} icon="revenue" accent="indigo" />
                   </div>
 
-                  <form onSubmit={updateEmployeePercentage} className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row">
+                  <form onSubmit={updateEmployeePercentage} className="mt-5 flex flex-col gap-3 border-t border-zinc-800 pt-5 sm:flex-row">
                     <div className="flex-1">
                       <label className="label">Đổi % lương (từ hôm nay)</label>
                       <input type="number" min="0" max="100" step="0.1" className="input" value={editPercentage} onChange={(e) => setEditPercentage(e.target.value)} required />
@@ -1048,7 +1048,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                     <button type="submit" className="btn btn-primary w-full sm:w-auto sm:self-end">Cập nhật %</button>
                   </form>
 
-                  <form onSubmit={resetEmployeePassword} className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row">
+                  <form onSubmit={resetEmployeePassword} className="mt-4 flex flex-col gap-3 border-t border-zinc-800 pt-4 sm:flex-row">
                     <div className="flex-1">
                       <label className="label">Đặt lại mật khẩu</label>
                       <input type="password" className="input" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" />

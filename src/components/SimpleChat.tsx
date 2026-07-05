@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cacheAvatars } from "@/lib/avatar-cache";
@@ -252,8 +252,8 @@ export function SimpleChat({
         className={`chat-sidebar ${sidebarOpen ? "chat-sidebar-open" : ""}`}
       >
         <div className="chat-sidebar-header">
-          <p className="text-base font-bold text-slate-900">Tin nhắn</p>
-          <p className="text-xs text-slate-500">{onlineCount} đang online</p>
+          <p className="text-base font-bold text-fg">Tin nhắn</p>
+          <p className="text-xs text-muted">{onlineCount} đang online</p>
         </div>
 
         <div className="space-y-1 p-2">
@@ -264,18 +264,18 @@ export function SimpleChat({
               room.kind === "group" ? "chat-sidebar-item-active" : ""
             }`}
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-lg">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-lg">
               #
             </span>
             <span className="min-w-0">
               <span className="block truncate font-medium">Chat chung</span>
-              <span className="block truncate text-xs text-slate-500">
+              <span className="block truncate text-xs text-muted">
                 Trao đổi với cả team
               </span>
             </span>
           </button>
 
-          <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-subtle">
             Tin nhắn riêng
           </p>
 
@@ -301,7 +301,7 @@ export function SimpleChat({
           ))}
 
           {members.length === 0 && (
-            <p className="px-3 py-2 text-sm text-slate-400">Chưa có thành viên khác.</p>
+            <p className="px-3 py-2 text-sm text-subtle">Chưa có thành viên khác.</p>
           )}
         </div>
       </aside>
@@ -343,10 +343,10 @@ export function SimpleChat({
           )}
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-semibold text-slate-900">
+            <p className="truncate text-base font-semibold text-fg">
               {roomTitle(room)}
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               {room.kind === "group"
                 ? `${onlineCount} online · ${members.length + 1} thành viên`
                 : "Tin nhắn riêng tư"}
@@ -356,18 +356,18 @@ export function SimpleChat({
 
         <div className="chat-messages">
           {loading && (
-            <p className="py-8 text-center text-sm text-slate-400">Đang tải...</p>
+            <p className="py-8 text-center text-sm text-subtle">Đang tải...</p>
           )}
 
           {!loading && visibleMessages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <p className="text-4xl">💬</p>
-              <p className="mt-3 font-medium text-slate-800">
+              <p className="mt-3 font-medium text-fg">
                 {room.kind === "group"
                   ? "Bắt đầu trò chuyện với team"
                   : `Nhắn riêng với ${room.kind === "dm" ? room.userName : "..."}`}
               </p>
-              <p className="mt-1 text-sm text-slate-500">Gửi tin nhắn đầu tiên bên dưới.</p>
+              <p className="mt-1 text-sm text-muted">Gửi tin nhắn đầu tiên bên dưới.</p>
             </div>
           )}
 
@@ -393,7 +393,7 @@ export function SimpleChat({
                     <p className="chat-meta chat-meta-other">{msg.senderName}</p>
                   )}
                   <p className="whitespace-pre-wrap break-words">{msg.text}</p>
-                  <p className={`chat-time ${isMe ? "text-indigo-100" : "text-slate-400"}`}>
+                  <p className={`chat-time ${isMe ? "text-muted" : "text-subtle"}`}>
                     {formatTime(msg.createdAt)}
                     {msg._pending ? " · đang gửi" : ""}
                   </p>

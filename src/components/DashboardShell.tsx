@@ -51,106 +51,113 @@ export function DashboardShell({
 
   return (
     <PresenceProvider userId={user.id}>
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold">
-            ₫
+      <div className="app-shell">
+        <aside className="sidebar">
+          <div className="sidebar-brand">
+            <div className="login-logo text-base">₫</div>
+            <div>
+              <p className="font-semibold leading-tight text-fg">Quản lý Lương</p>
+              <p className="text-xs text-subtle">
+                {user.role === "ADMIN" ? "Quản trị" : "Nhân viên"}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-semibold leading-tight">Quản lý Lương</p>
-            <p className="text-xs text-slate-400">
-              {user.role === "ADMIN" ? "Bảng điều khiển" : "Nhân viên"}
-            </p>
+
+          <nav className="sidebar-nav">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onTabChange(item.id)}
+                className={`sidebar-link ${
+                  activeTab === item.id ? "sidebar-link-active" : ""
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="sidebar-footer">
+            <SidebarUserCard user={user} />
+            <button
+              type="button"
+              onClick={logout}
+              className="sidebar-link w-full text-danger hover:text-danger"
+            >
+              <IconLogout className="h-5 w-5" />
+              Đăng xuất
+            </button>
           </div>
+        </aside>
+
+        <div className={`main-area ${fullBleed ? "main-area-full" : ""}`}>
+          {!fullBleed && (
+            <header className="topbar">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h1 className="truncate text-lg font-semibold tracking-tight text-fg sm:text-xl">
+                      {pageTitle}
+                    </h1>
+                    {pageSubtitle && (
+                      <p className="mt-0.5 line-clamp-2 text-sm text-muted">
+                        {pageSubtitle}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2 lg:hidden">
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="btn btn-secondary flex h-11 w-11 items-center justify-center p-0"
+                      aria-label="Đăng xuất"
+                      title="Đăng xuất"
+                    >
+                      <IconLogout className="h-5 w-5" />
+                    </button>
+                    <UserAvatar
+                      name={user.name}
+                      avatarUrl={user.avatarUrl}
+                      userId={user.id}
+                      size="sm"
+                    />
+                  </div>
+                  {headerAction && (
+                    <div className="hidden shrink-0 sm:block">{headerAction}</div>
+                  )}
+                </div>
+                {headerAction && (
+                  <div className="sm:hidden [&_.btn]:w-full">{headerAction}</div>
+                )}
+              </div>
+            </header>
+          )}
+
+          <main
+            className={fullBleed ? "page-content page-content-full" : "page-content"}
+          >
+            {children}
+          </main>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="bottom-nav">
           {navItems.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => onTabChange(item.id)}
-              className={`sidebar-link ${
-                activeTab === item.id ? "sidebar-link-active" : ""
+              className={`bottom-nav-link ${
+                activeTab === item.id ? "bottom-nav-link-active" : ""
               }`}
             >
-              {item.icon}
-              {item.label}
+              <span className="h-5 w-5 opacity-80">{item.icon}</span>
+              <span>{item.shortLabel ?? item.label}</span>
             </button>
           ))}
         </nav>
-
-        <div className="sidebar-footer">
-          <SidebarUserCard user={user} />
-          <button
-            type="button"
-            onClick={logout}
-            className="sidebar-link w-full text-red-300 hover:bg-red-950/40 hover:text-red-200"
-          >
-            <IconLogout className="h-5 w-5" />
-            Đăng xuất
-          </button>
-        </div>
-      </aside>
-
-      <div className={`main-area ${fullBleed ? "main-area-full" : ""}`}>
-        {!fullBleed && (
-        <header className="topbar">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <h1 className="truncate text-lg font-bold text-slate-900 sm:text-xl">
-                  {pageTitle}
-                </h1>
-                {pageSubtitle && (
-                  <p className="mt-0.5 line-clamp-2 text-sm text-slate-500">{pageSubtitle}</p>
-                )}
-              </div>
-              <div className="flex shrink-0 items-center gap-2 lg:hidden">
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition active:bg-red-50 active:text-red-600"
-                  aria-label="Đăng xuất"
-                  title="Đăng xuất"
-                >
-                  <IconLogout className="h-5 w-5" />
-                </button>
-                <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
-              </div>
-              {headerAction && (
-                <div className="hidden shrink-0 sm:block">{headerAction}</div>
-              )}
-            </div>
-            {headerAction && (
-              <div className="sm:hidden [&_.btn]:w-full">{headerAction}</div>
-            )}
-          </div>
-        </header>
-        )}
-
-        <main className={fullBleed ? "page-content page-content-full" : "page-content"}>
-          {children}
-        </main>
       </div>
-
-      <nav className="bottom-nav">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onTabChange(item.id)}
-            className={`bottom-nav-link ${
-              activeTab === item.id ? "bottom-nav-link-active" : ""
-            }`}
-          >
-            <span className="h-5 w-5">{item.icon}</span>
-            <span>{item.shortLabel ?? item.label}</span>
-          </button>
-        ))}
-      </nav>
-    </div>
     </PresenceProvider>
   );
 }
@@ -159,7 +166,10 @@ function SidebarUserCard({ user }: { user: User }) {
   const presence = usePresence(user.id);
 
   return (
-    <div className="mb-2 flex items-center gap-3 rounded-xl bg-slate-800/60 px-3 py-2.5">
+    <div
+      className="mb-2 flex items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5"
+      style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
+    >
       <div className="relative shrink-0">
         <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
         <OnlineDot
@@ -169,8 +179,8 @@ function SidebarUserCard({ user }: { user: User }) {
         />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{user.name}</p>
-        <p className="truncate text-xs text-slate-400">
+        <p className="truncate text-sm font-medium text-fg">{user.name}</p>
+        <p className="truncate text-xs text-subtle">
           {user.role === "ADMIN" ? "Quản trị viên" : "Nhân viên"}
           {" · "}
           {presence.online ? "Online" : "Offline"}

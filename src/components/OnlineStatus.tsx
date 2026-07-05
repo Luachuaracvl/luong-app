@@ -17,8 +17,8 @@ export function OnlineDot({
 
   return (
     <span
-      className={`inline-block rounded-full border-2 border-white ${
-        isOnline ? "bg-emerald-500" : "bg-slate-300"
+      className={`inline-block rounded-full border-2 ${isOnline ? "border-zinc-900" : "border-zinc-800"} ${
+        isOnline ? "bg-emerald-400" : "bg-zinc-600"
       } ${className}`}
       title={isOnline ? "Online" : "Offline"}
     />
