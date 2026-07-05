@@ -55,53 +55,33 @@ export function ProfilePanel({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function saveProfile(e: React.FormEvent) {
+  async function saveName(e: React.FormEvent) {
     e.preventDefault();
     setMessage("");
     setError("");
 
     const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError("Họ tên không được để trống");
+      return;
+    }
+    if (trimmedName === profile.name) {
+      setMessage("Không có thay đổi");
+      return;
+    }
+
     const prevProfile = profile;
     const prevName = profile.name;
 
     setProfile((p) => ({ ...p, name: trimmedName }));
     onUpdated?.({ ...profile, name: trimmedName });
-    setMessage("Đã cập nhật hồ sơ");
     setLoading(true);
 
     try {
-      const body: Record<string, string> = { name: trimmedName };
-
-      if (newPassword || currentPassword || confirmPassword) {
-        if (!currentPassword || !newPassword) {
-          setProfile(prevProfile);
-          onUpdated?.(prevProfile);
-          setError("Nhập mật khẩu hiện tại và mật khẩu mới");
-          setMessage("");
-          return;
-        }
-        if (newPassword.length < 6) {
-          setProfile(prevProfile);
-          onUpdated?.(prevProfile);
-          setError("Mật khẩu mới phải có ít nhất 6 ký tự");
-          setMessage("");
-          return;
-        }
-        if (newPassword !== confirmPassword) {
-          setProfile(prevProfile);
-          onUpdated?.(prevProfile);
-          setError("Mật khẩu mới không khớp");
-          setMessage("");
-          return;
-        }
-        body.currentPassword = currentPassword;
-        body.newPassword = newPassword;
-      }
-
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ name: trimmedName }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -109,7 +89,51 @@ export function ProfilePanel({
         onUpdated?.(prevProfile);
         setName(prevName);
         setError(data.error || "Cập nhật thất bại");
-        setMessage("");
+        return;
+      }
+
+      setProfile(data.user);
+      onUpdated?.(data.user);
+      setMessage("Đã cập nhật tên hiển thị");
+    } catch {
+      setProfile(prevProfile);
+      onUpdated?.(prevProfile);
+      setName(prevName);
+      setError("Không thể kết nối server");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function savePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setMessage("");
+    setError("");
+
+    if (!currentPassword || !newPassword) {
+      setError("Nhập mật khẩu hiện tại và mật khẩu mới");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError("Mật khẩu mới phải có ít nhất 6 ký tự");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Mật khẩu mới không khớp");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Đổi mật khẩu thất bại");
         return;
       }
 
@@ -118,12 +142,9 @@ export function ProfilePanel({
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setMessage("Đã đổi mật khẩu");
     } catch {
-      setProfile(prevProfile);
-      onUpdated?.(prevProfile);
-      setName(prevName);
       setError("Không thể kết nối server");
-      setMessage("");
     } finally {
       setLoading(false);
     }
@@ -254,7 +275,8 @@ export function ProfilePanel({
           <p className="mt-3 text-xs text-slate-400">JPG, PNG — tối đa 5MB</p>
         </div>
 
-        <form onSubmit={saveProfile} className="card space-y-5">
+        <div className="space-y-6">
+          <form onSubmit={saveName} className="card space-y-5">
           <div>
             <h3 className="font-semibold text-slate-900">Thông tin tài khoản</h3>
             <p className="text-sm text-slate-500">Avatar hiển thị trên chat và danh sách nhân viên</p>
@@ -275,47 +297,54 @@ export function ProfilePanel({
             />
           </div>
 
-          <div className="card-section space-y-3">
-            <h3 className="font-medium text-slate-800">Đổi mật khẩu</h3>
-            <div>
-              <label className="label">Mật khẩu hiện tại</label>
-              <input
-                type="password"
-                className="input"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                autoComplete="current-password"
-              />
-            </div>
-            <div>
-              <label className="label">Mật khẩu mới</label>
-              <input
-                type="password"
-                className="input"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-            </div>
-            <div>
-              <label className="label">Nhập lại mật khẩu mới</label>
-              <input
-                type="password"
-                className="input"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-            </div>
-          </div>
-
           <AlertBanner type="success" message={message} onDismiss={() => setMessage("")} />
           <AlertBanner type="error" message={error} onDismiss={() => setError("")} />
 
           <button type="submit" disabled={loading} className="btn btn-primary w-full sm:w-auto">
-            {loading ? "Đang lưu..." : "Lưu thay đổi"}
+            {loading ? "Đang lưu..." : "Lưu tên hiển thị"}
           </button>
-        </form>
+          </form>
+
+          <form onSubmit={savePassword} className="card card-section space-y-3">
+          <div>
+            <h3 className="font-medium text-slate-800">Đổi mật khẩu</h3>
+            <p className="text-sm text-slate-500">Chỉ cần điền khi bạn muốn đổi mật khẩu</p>
+          </div>
+          <div>
+            <label className="label">Mật khẩu hiện tại</label>
+            <input
+              type="password"
+              className="input"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </div>
+          <div>
+            <label className="label">Mật khẩu mới</label>
+            <input
+              type="password"
+              className="input"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+          </div>
+          <div>
+            <label className="label">Nhập lại mật khẩu mới</label>
+            <input
+              type="password"
+              className="input"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+          </div>
+          <button type="submit" disabled={loading} className="btn btn-secondary w-full sm:w-auto">
+            {loading ? "Đang xử lý..." : "Đổi mật khẩu"}
+          </button>
+          </form>
+        </div>
       </div>
     </div>
   );
