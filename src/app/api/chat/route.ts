@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
-import { findUserById, findAllUsersForChat } from "@/lib/db/users";
+import {
+  appendMessageToCache,
+  getCachedRecentMessages,
+  invalidateMessagesCache,
+  mergeSinceIntoCache,
+  setCachedRecentMessages,
+} from "@/lib/cache/chat-server-cache";
+import { findUserById } from "@/lib/db/users";
 import {
   createMessage,
   listMessagesSince,
@@ -20,17 +27,18 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Tham số since không hợp lệ" }, { status: 400 });
       }
       const messages = await listMessagesSince(sinceDate);
+      mergeSinceIntoCache(sinceDate, messages);
       return NextResponse.json({ messages: messages.map(messageToJson) });
     }
 
-    const [messages, members] = await Promise.all([
-      listRecentMessages(50),
-      findAllUsersForChat(),
-    ]);
-    return NextResponse.json({
-      messages: messages.map(messageToJson),
-      members,
-    });
+    const cached = getCachedRecentMessages();
+    if (cached) {
+      return NextResponse.json({ messages: cached.map(messageToJson) });
+    }
+
+    const messages = await listRecentMessages(80);
+    setCachedRecentMessages(messages);
+    return NextResponse.json({ messages: messages.map(messageToJson) });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
@@ -61,8 +69,12 @@ export async function POST(request: Request) {
       senderId: session.id,
       senderName: user.name,
       senderRole: user.role,
+      senderAvatarUrl: user.avatarUrl ?? null,
       text,
     });
+
+    invalidateMessagesCache();
+    appendMessageToCache(created);
 
     return NextResponse.json({ message: messageToJson(created) });
   } catch (error) {

@@ -4,7 +4,7 @@ import type { ChatMessageDoc, Role } from "@/lib/types";
 
 const COLLECTION = "chatMessages";
 
-export async function listRecentMessages(limit = 50) {
+export async function listRecentMessages(limit = 80) {
   const snap = await getDb()
     .collection(COLLECTION)
     .orderBy("createdAt", "desc")
@@ -34,27 +34,26 @@ export async function createMessage(data: {
   senderId: string;
   senderName: string;
   senderRole: Role;
+  senderAvatarUrl?: string | null;
   text: string;
 }) {
-  const db = getDb();
-  const ref = db.collection(COLLECTION).doc();
-  const createdAt = Timestamp.now();
+  const ref = await getDb()
+    .collection(COLLECTION)
+    .add({
+      senderId: data.senderId,
+      senderName: data.senderName,
+      senderRole: data.senderRole,
+      senderAvatarUrl: data.senderAvatarUrl ?? null,
+      text: data.text,
+      createdAt: FieldValue.serverTimestamp(),
+    });
 
-  await ref.set({
-    senderId: data.senderId,
-    senderName: data.senderName,
-    senderRole: data.senderRole,
-    text: data.text,
-    createdAt: FieldValue.serverTimestamp(),
-  });
-
+  const created = await ref.get();
+  const msg = created.data() as ChatMessageDoc;
   return {
-    id: ref.id,
-    senderId: data.senderId,
-    senderName: data.senderName,
-    senderRole: data.senderRole,
-    text: data.text,
-    createdAt,
+    id: created.id,
+    ...msg,
+    createdAt: msg.createdAt ?? Timestamp.now(),
   };
 }
 
@@ -64,6 +63,7 @@ export function messageToJson(msg: ChatMessageDoc & { id: string }) {
     senderId: msg.senderId,
     senderName: msg.senderName,
     senderRole: msg.senderRole,
+    senderAvatarUrl: msg.senderAvatarUrl ?? null,
     text: msg.text,
     createdAt: msg.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
   };
