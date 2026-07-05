@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
-import { resolveRoom, parseMentions } from "@/lib/chat-room";
+import { resolveRoom } from "@/lib/chat-room";
 import {
   appendMessageToCache,
   getCachedRecentMessages,
@@ -12,13 +12,11 @@ import {
 import { findChannelById } from "@/lib/db/channels";
 import {
   createMessage,
-  findMessageById,
   listMessagesSince,
   listMessagesUpdatedSince,
   listRecentMessages,
   messageToJson,
 } from "@/lib/db/messages";
-import { findAllUsersForChat } from "@/lib/db/users";
 
 function getRoomFromRequest(url: URL, userId: string) {
   const channelId = url.searchParams.get("channelId");
@@ -121,37 +119,14 @@ export async function POST(request: Request) {
       }
     }
 
-    let replyToName: string | null = null;
-    let replyToText: string | null = null;
-    if (body.replyToId) {
-      const reply = await findMessageById(String(body.replyToId));
-      if (reply && !reply.recalled) {
-        replyToName = reply.senderName;
-        replyToText = reply.text.slice(0, 120);
-      }
-    }
-
-    const members = await findAllUsersForChat();
-    const mentions = parseMentions(text, members);
-
-    let avatarUrl: string | null = null;
-    if (typeof body.avatarUrl === "string" && body.avatarUrl.startsWith("data:image/")) {
-      if (body.avatarUrl.length <= 500_000) avatarUrl = body.avatarUrl;
-    }
-
     const created = await createMessage({
       senderId: session.id,
       senderName: session.name,
       senderRole: session.role,
-      senderAvatarUrl: avatarUrl,
       text,
       roomKey: room.roomKey,
       channelId: room.type === "channel" ? room.channelId : null,
       dmPeerId: room.type === "dm" ? room.peerId : null,
-      replyToId: body.replyToId ?? null,
-      replyToName,
-      replyToText,
-      mentions,
     });
 
     invalidateMessagesCache(room.roomKey);

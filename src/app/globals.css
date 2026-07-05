@@ -69,14 +69,6 @@ button {
   @apply h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden;
 }
 
-@media (max-width: 1023px) {
-  body.chat-keyboard-open .main-area-full {
-    height: var(--chat-vh, 100dvh);
-    max-height: var(--chat-vh, 100dvh);
-    transform: translateY(var(--chat-vt, 0px));
-  }
-}
-
 .topbar {
   @apply sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-md sm:px-6 sm:py-4;
   padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
@@ -95,19 +87,9 @@ button {
 }
 
 .page-content-full {
-  @apply flex min-h-0 flex-col overflow-hidden p-0;
-  height: var(--chat-vh, calc(100dvh - var(--bottom-nav-height)));
-  max-height: var(--chat-vh, calc(100dvh - var(--bottom-nav-height)));
-}
-
-body.chat-keyboard-open .page-content-full {
-  height: var(--chat-vh, 100dvh);
-  max-height: var(--chat-vh, 100dvh);
-  padding-bottom: 0;
-}
-
-body.chat-keyboard-open .bottom-nav {
-  @apply pointer-events-none opacity-0;
+  @apply flex min-h-0 flex-1 flex-col overflow-hidden p-0;
+  height: calc(100dvh - var(--bottom-nav-height));
+  max-height: calc(100dvh - var(--bottom-nav-height));
 }
 
 @media (min-width: 1024px) {
@@ -376,27 +358,61 @@ table.data-table tr:last-child td {
   @apply animate-pulse rounded-lg bg-slate-200;
 }
 
-/* Chat */
+/* Chat — bubble UI, mobile-first */
+.chat-app {
+  @apply flex h-full min-h-0 w-full flex-1 overflow-hidden bg-slate-50;
+}
+
+.chat-sidebar {
+  @apply hidden h-full min-h-0 w-full shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white lg:flex lg:w-72;
+}
+
+.chat-sidebar-open {
+  @apply flex;
+}
+
+.chat-sidebar-header {
+  @apply border-b border-slate-100 px-4 py-3;
+}
+
+.chat-sidebar-item {
+  @apply flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-700 transition active:bg-slate-100;
+}
+
+.chat-sidebar-item-active {
+  @apply bg-indigo-50 font-medium text-indigo-700;
+}
+
 .chat-shell {
-  @apply flex h-[calc(100vh-11rem)] min-h-[420px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white lg:h-[calc(100vh-9rem)];
-  box-shadow: var(--card-shadow);
+  @apply hidden h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white lg:flex;
 }
 
-.chat-members {
-  @apply flex gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50/80 px-4 py-3;
-  -webkit-overflow-scrolling: touch;
+.chat-shell-open {
+  @apply flex;
 }
 
-.chat-member {
-  @apply flex shrink-0 flex-col items-center gap-1;
+.chat-segment {
+  @apply flex shrink-0 gap-1 border-b border-slate-100 bg-white p-2 lg:hidden;
 }
 
-.chat-member-name {
-  @apply max-w-[56px] truncate text-[10px] text-slate-500;
+.chat-segment-btn {
+  @apply min-h-11 flex-1 rounded-xl text-sm font-medium text-slate-600 transition active:bg-slate-100;
+}
+
+.chat-segment-btn-active {
+  @apply bg-indigo-600 text-white active:bg-indigo-700;
+}
+
+.chat-header {
+  @apply flex shrink-0 items-center gap-2 border-b border-slate-100 bg-white px-3 py-2.5;
+}
+
+.chat-back-btn {
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-600 active:bg-slate-100;
 }
 
 .chat-messages {
-  @apply flex-1 space-y-3 overflow-y-auto px-4 py-4;
+  @apply flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -424,285 +440,29 @@ table.data-table tr:last-child td {
   @apply mb-0.5 text-[11px] font-medium;
 }
 
-.chat-meta-me {
-  @apply text-right text-indigo-200;
-}
-
 .chat-meta-other {
   @apply text-slate-500;
 }
 
-.chat-input-bar {
-  @apply flex gap-2 border-t border-slate-100 bg-white p-3 sm:p-4;
-}
-
 .chat-time {
-  @apply text-[10px] opacity-70;
+  @apply mt-1 text-[10px];
 }
 
-.chat-footer {
-  @apply mt-1 flex items-center gap-2;
+.chat-input-bar {
+  @apply flex shrink-0 items-end gap-2 border-t border-slate-100 bg-white p-2 sm:p-3;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
 }
 
-.chat-footer-me {
-  @apply justify-end;
-}
-
-.chat-recall-btn {
-  @apply text-[10px] text-indigo-200 underline-offset-2 hover:underline;
-}
-
-.chat-bubble-other .chat-recall-btn {
-  @apply text-slate-400;
-}
-
-.chat-recalled {
-  @apply text-sm italic opacity-70;
-}
-
-/* Discord-style chat */
-.discord-chat {
-  @apply relative flex h-full min-h-0 w-full flex-1 overflow-hidden bg-slate-50;
-}
-
-.discord-pane {
-  @apply hidden h-full min-h-0 min-w-0 flex-col overflow-hidden;
-}
-
-.discord-pane-active {
-  @apply flex;
-}
-
-.discord-sidebar {
-  @apply hidden h-full min-h-0 min-w-0 w-full shrink-0 flex-col overflow-y-auto border-r border-slate-200/80 bg-white lg:flex lg:w-[17.5rem];
-}
-
-.discord-sidebar.discord-pane-active {
-  @apply flex;
-}
-
-.discord-sidebar-header {
-  @apply sticky top-0 z-10 border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur-sm;
-}
-
-.discord-sidebar-section {
-  @apply px-3 py-2;
-}
-
-.discord-sidebar-label {
-  @apply px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400;
-}
-
-.discord-nav-item {
-  @apply mb-0.5 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[15px] text-slate-600 transition active:scale-[0.98] hover:bg-slate-100 hover:text-slate-900;
-}
-
-.discord-nav-item-active {
-  @apply bg-indigo-50 font-medium text-indigo-700 hover:bg-indigo-50 hover:text-indigo-700;
-}
-
-.discord-nav-hash {
-  @apply text-lg font-medium text-slate-400;
-}
-
-.discord-main {
-  @apply hidden h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white lg:flex;
-}
-
-.discord-main.discord-pane-active {
-  @apply flex h-full max-h-full;
-}
-
-.discord-header {
-  @apply z-20 flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 bg-white px-3 py-2.5 shadow-sm sm:px-4;
-}
-
-.discord-room-footer {
-  @apply z-20 shrink-0 border-t border-slate-200/80 bg-white;
-}
-
-@media (max-width: 1023px) {
-  .discord-room-footer {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  body.chat-keyboard-open .discord-room-footer {
-    padding-bottom: 0;
-  }
-}
-
-.discord-header-back {
-  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 active:bg-slate-200 lg:hidden;
-}
-
-.discord-header-title {
-  @apply min-w-0 flex-1;
-}
-
-.discord-header-name {
-  @apply flex items-center gap-1 truncate text-base font-semibold text-slate-900;
-}
-
-.discord-header-meta {
-  @apply mt-0.5 flex items-center gap-1.5 text-xs text-slate-500;
-}
-
-.discord-header-dot {
-  @apply h-1.5 w-1.5 rounded-full bg-emerald-500;
-}
-
-.discord-header-actions {
-  @apply flex shrink-0 items-center gap-1;
-}
-
-.discord-icon-btn {
-  @apply flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 active:bg-slate-200;
-}
-
-.discord-main-body {
-  @apply relative flex min-h-0 flex-1 flex-col overflow-hidden;
-}
-
-.discord-messages {
-  @apply h-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 sm:px-4;
-  -webkit-overflow-scrolling: touch;
-}
-
-.discord-search-bar {
-  @apply shrink-0 border-b border-slate-200/80 bg-white px-3 py-2;
-}
-
-.discord-date-divider {
-  @apply relative my-4 flex items-center justify-center;
-}
-
-.discord-date-divider::before,
-.discord-date-divider::after {
-  content: "";
-  @apply h-px flex-1 bg-slate-200;
-}
-
-.discord-date-divider span {
-  @apply mx-3 shrink-0 rounded-full bg-white px-3 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-slate-200;
-}
-
-.discord-message {
-  @apply relative flex gap-3 rounded-md px-1 py-0.5 transition hover:bg-slate-50/80 sm:px-2 sm:py-1;
-}
-
-.discord-message-compact {
-  @apply mt-0 py-0.5;
-}
-
-.discord-message-avatar-spacer {
-  @apply w-9 shrink-0 sm:w-10;
-}
-
-.discord-message-header {
-  @apply flex flex-wrap items-baseline gap-x-2 gap-y-0.5;
-}
-
-.discord-message-name {
-  @apply text-[15px] font-semibold text-slate-900 hover:underline;
-}
-
-.discord-message-time {
-  @apply text-[11px] text-slate-400;
-}
-
-.discord-message-body {
-  @apply text-[15px] leading-relaxed text-slate-800;
-}
-
-.discord-msg-recalled {
-  @apply text-sm italic text-slate-400;
-}
-
-.discord-mention {
-  @apply rounded bg-indigo-100/90 px-1 py-0.5 font-medium text-indigo-700;
-}
-
-.discord-reply {
-  @apply mb-1 flex cursor-pointer flex-col gap-0.5 border-l-[3px] border-indigo-400 pl-2 text-xs;
-}
-
-.discord-reaction {
-  @apply rounded-full border border-slate-200/80 bg-white px-2 py-0.5 text-xs shadow-sm transition hover:bg-slate-50;
-}
-
-.discord-reaction-active {
-  @apply border-indigo-300 bg-indigo-50 text-indigo-700;
-}
-
-.discord-msg-actions-sheet {
-  @apply flex flex-wrap justify-center gap-2;
-}
-
-.discord-msg-more {
-  @apply absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-slate-400 transition active:bg-slate-100 active:text-slate-600;
-}
-
-.discord-action-sheet {
-  @apply fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom,0px)] shadow-2xl ring-1 ring-slate-200 sm:left-1/2 sm:max-w-md sm:-translate-x-1/2;
-}
-
-.discord-action-btn {
-  @apply min-h-11 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200/80 active:bg-slate-100;
-}
-
-.discord-reply-bar {
-  @apply flex shrink-0 items-center gap-3 border-t border-indigo-100 bg-indigo-50/90 px-3 py-2 sm:px-4;
-}
-
-.discord-composer {
-  @apply flex shrink-0 items-end gap-2 bg-white px-2 py-2 sm:px-3;
-}
-
-.discord-composer-field {
-  @apply relative flex min-w-0 flex-1 items-end rounded-3xl bg-slate-100 px-3 py-1 ring-1 ring-transparent transition focus-within:bg-white focus-within:ring-indigo-300;
-}
-
-.discord-composer-input {
-  @apply max-h-[120px] min-h-[40px] w-full resize-none bg-transparent py-2.5 text-base leading-normal text-slate-900 outline-none placeholder:text-slate-400;
-  touch-action: manipulation;
+.chat-input {
+  @apply max-h-[120px] min-h-11 flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 leading-normal text-slate-900 outline-none focus:border-indigo-300 focus:bg-white;
   font-size: 16px;
+  touch-action: manipulation;
 }
 
-.discord-composer-btn {
-  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-indigo-600 active:scale-95 disabled:opacity-40;
+.chat-send-btn {
+  @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white transition active:scale-95 disabled:bg-slate-300;
 }
 
-.discord-composer-send {
-  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700 active:scale-95 disabled:bg-slate-300;
-}
-
-.discord-empty {
-  @apply flex flex-col items-center justify-center px-6 py-16 text-center;
-}
-
-.discord-empty-icon {
-  @apply mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-2xl;
-}
-
-.discord-action-sheet-handle {
-  @apply mx-auto my-2 h-1 w-10 rounded-full bg-slate-200;
-}
-
-.discord-overlay {
-  @apply fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px];
-}
-
-.discord-toast-error {
-  @apply absolute left-3 right-3 z-20 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-600 shadow-lg ring-1 ring-red-100;
-  bottom: calc(var(--bottom-nav-height) + 4.5rem);
-}
-
-body.chat-keyboard-open .discord-toast-error {
-  bottom: 5rem;
-}
-
-@media (min-width: 1024px) {
-  .discord-toast-error {
-    @apply bottom-4 left-4 right-auto max-w-sm;
-  }
+.chat-error {
+  @apply shrink-0 border-t border-red-100 bg-red-50 px-4 py-2 text-sm text-red-600;
 }

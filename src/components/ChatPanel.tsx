@@ -1,1 +1,1 @@
-export { ChatPanel, DiscordChat } from "./DiscordChat";
+export { ChatPanel, SimpleChat } from "./SimpleChat";
