@@ -30,6 +30,7 @@ export function DashboardShell({
   children,
   headerAction,
   fullBleed,
+  showSubtitleOnMobile,
 }: {
   user: User;
   navItems: NavItem[];
@@ -40,6 +41,7 @@ export function DashboardShell({
   children: React.ReactNode;
   headerAction?: React.ReactNode;
   fullBleed?: boolean;
+  showSubtitleOnMobile?: boolean;
 }) {
   const router = useRouter();
 
@@ -98,14 +100,18 @@ export function DashboardShell({
               <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <h1 className="truncate text-lg font-semibold tracking-tight text-fg sm:text-xl">
-                      {pageTitle}
-                    </h1>
-                    {pageSubtitle && (
-                      <p className="mt-0.5 line-clamp-2 text-sm text-muted">
-                        {pageSubtitle}
-                      </p>
-                    )}
+                <h1 className="topbar-title">
+                  {pageTitle}
+                </h1>
+                {pageSubtitle && (
+                  <p
+                    className={`topbar-subtitle ${
+                      showSubtitleOnMobile ? "topbar-subtitle-show" : ""
+                    }`}
+                  >
+                    {pageSubtitle}
+                  </p>
+                )}
                   </div>
                   <div className="flex shrink-0 items-center gap-2 lg:hidden">
                     <button

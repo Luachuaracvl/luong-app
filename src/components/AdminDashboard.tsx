@@ -705,7 +705,8 @@ export default function AdminDashboard({ user }: { user: User }) {
       activeTab={tab}
       onTabChange={(id) => setTab(id as Tab)}
       pageTitle={tab === "overview" ? greeting : page.title}
-      pageSubtitle={tab === "overview" ? page.subtitle : page.subtitle}
+      pageSubtitle={tab === "overview" ? page.subtitle : undefined}
+      showSubtitleOnMobile={tab === "overview"}
       headerAction={
         tab === "revenue" ? undefined : tab === "overview" ? (
           <button type="button" onClick={() => setTab("revenue")} className="btn btn-primary">
@@ -875,6 +876,7 @@ export default function AdminDashboard({ user }: { user: User }) {
         <div className="grid gap-6 lg:grid-cols-5">
           <form onSubmit={submitRevenue} className="card space-y-4 lg:col-span-2">
             <SectionHeader
+              compact
               title="Cập nhật doanh thu"
               description="Hệ thống tự tính lương cho nhân viên đang hoạt động theo % hiện tại"
             />
@@ -897,7 +899,7 @@ export default function AdminDashboard({ user }: { user: User }) {
           </form>
 
           <div className="card lg:col-span-3">
-            <SectionHeader title="Lịch sử gần đây" description="5 ngày doanh thu mới nhất" />
+            <SectionHeader compact title="Lịch sử gần đây" description="5 ngày doanh thu mới nhất" />
             {dayStats.length === 0 ? (
               <EmptyState title="Chưa có doanh thu" description="Nhập doanh thu đầu tiên ở form bên trái" />
             ) : (

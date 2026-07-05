@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cacheAvatars } from "@/lib/avatar-cache";
+import { useMobileChatViewport } from "@/hooks/useMobileChatViewport";
 import { IconChevronLeft, IconSend } from "./Icons";
 import { AvatarWithStatus } from "./OnlineStatus";
 import { useOnlineCount } from "./PresenceProvider";
@@ -59,6 +60,41 @@ function roomTitle(room: Room) {
   return room.kind === "group" ? "Chat chung" : room.userName;
 }
 
+function ChatSegment({
+  room,
+  mobileScreen,
+  onGroup,
+  onInbox,
+}: {
+  room: Room;
+  mobileScreen: MobileScreen;
+  onGroup: () => void;
+  onInbox: () => void;
+}) {
+  return (
+    <div className="chat-segment">
+      <button
+        type="button"
+        className={`chat-segment-btn ${
+          room.kind === "group" && mobileScreen === "chat" ? "chat-segment-btn-active" : ""
+        }`}
+        onClick={onGroup}
+      >
+        Chat chung
+      </button>
+      <button
+        type="button"
+        className={`chat-segment-btn ${
+          mobileScreen === "inbox" || room.kind === "dm" ? "chat-segment-btn-active" : ""
+        }`}
+        onClick={onInbox}
+      >
+        Riêng tư
+      </button>
+    </div>
+  );
+}
+
 export function SimpleChat({
   currentUser,
 }: {
@@ -80,6 +116,8 @@ export function SimpleChat({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastMessageAtRef = useRef<string | null>(null);
   const onlineCount = useOnlineCount();
+
+  useMobileChatViewport(mobileScreen === "chat");
 
   const scrollToBottom = useCallback((smooth = true) => {
     bottomRef.current?.scrollIntoView({
@@ -140,6 +178,16 @@ export function SimpleChat({
   }, [messages.length, scrollToBottom]);
 
   useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const onFocus = () => {
+      window.setTimeout(() => scrollToBottom(false), 150);
+    };
+    el.addEventListener("focus", onFocus);
+    return () => el.removeEventListener("focus", onFocus);
+  }, [scrollToBottom, room]);
+
+  useEffect(() => {
     const poll = async () => {
       const since = lastMessageAtRef.current;
       const url = since
@@ -170,6 +218,11 @@ export function SimpleChat({
   function selectGroup() {
     setRoom({ kind: "group" });
     setMobileScreen("chat");
+    setError("");
+  }
+
+  function openInbox() {
+    setMobileScreen("inbox");
     setError("");
   }
 
@@ -241,93 +294,76 @@ export function SimpleChat({
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   }
 
-  const sidebarOpen = mobileScreen === "inbox";
+  const inboxOpen = mobileScreen === "inbox";
   const chatOpen = mobileScreen === "chat";
-
   const visibleMessages = messages.filter((m) => !m.recalled && m.text.trim());
+
+  const sidebarList = (
+    <div className="space-y-1 p-2">
+      <button
+        type="button"
+        onClick={selectGroup}
+        className={`chat-sidebar-item ${
+          room.kind === "group" ? "chat-sidebar-item-active" : ""
+        }`}
+      >
+        <span className="chat-group-icon">#</span>
+        <span className="min-w-0">
+          <span className="block truncate font-medium">Chat chung</span>
+          <span className="block truncate text-xs text-muted">Trao đổi với cả team</span>
+        </span>
+      </button>
+
+      <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-subtle">
+        Tin nhắn riêng
+      </p>
+
+      {members.map((m) => (
+        <button
+          key={m.id}
+          type="button"
+          onClick={() => selectDm(m)}
+          className={`chat-sidebar-item ${
+            room.kind === "dm" && room.userId === m.id ? "chat-sidebar-item-active" : ""
+          }`}
+        >
+          <AvatarWithStatus userId={m.id} name={m.name} avatarUrl={m.avatarUrl} size="sm" />
+          <span className="min-w-0 truncate font-medium">{m.name}</span>
+        </button>
+      ))}
+
+      {members.length === 0 && (
+        <p className="px-3 py-2 text-sm text-subtle">Chưa có thành viên khác.</p>
+      )}
+    </div>
+  );
 
   return (
     <div className="chat-app">
-      <aside
-        className={`chat-sidebar ${sidebarOpen ? "chat-sidebar-open" : ""}`}
-      >
+      <aside className={`chat-sidebar ${inboxOpen ? "chat-sidebar-open" : ""}`}>
+        <div className="chat-mobile-bar lg:hidden">
+          <ChatSegment
+            room={room}
+            mobileScreen={mobileScreen}
+            onGroup={selectGroup}
+            onInbox={openInbox}
+          />
+        </div>
         <div className="chat-sidebar-header">
-          <p className="text-base font-bold text-fg">Tin nhắn</p>
+          <p className="text-sm font-semibold text-fg">Tin nhắn</p>
           <p className="text-xs text-muted">{onlineCount} đang online</p>
         </div>
-
-        <div className="space-y-1 p-2">
-          <button
-            type="button"
-            onClick={selectGroup}
-            className={`chat-sidebar-item ${
-              room.kind === "group" ? "chat-sidebar-item-active" : ""
-            }`}
-          >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-lg">
-              #
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate font-medium">Chat chung</span>
-              <span className="block truncate text-xs text-muted">
-                Trao đổi với cả team
-              </span>
-            </span>
-          </button>
-
-          <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-subtle">
-            Tin nhắn riêng
-          </p>
-
-          {members.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => selectDm(m)}
-              className={`chat-sidebar-item ${
-                room.kind === "dm" && room.userId === m.id
-                  ? "chat-sidebar-item-active"
-                  : ""
-              }`}
-            >
-              <AvatarWithStatus
-                userId={m.id}
-                name={m.name}
-                avatarUrl={m.avatarUrl}
-                size="sm"
-              />
-              <span className="min-w-0 truncate font-medium">{m.name}</span>
-            </button>
-          ))}
-
-          {members.length === 0 && (
-            <p className="px-3 py-2 text-sm text-subtle">Chưa có thành viên khác.</p>
-          )}
-        </div>
+        {sidebarList}
       </aside>
 
       <div className={`chat-shell ${chatOpen ? "chat-shell-open" : ""}`}>
-        <div className="chat-segment">
-          <button
-            type="button"
-            className={`chat-segment-btn ${
-              room.kind === "group" ? "chat-segment-btn-active" : ""
-            }`}
-            onClick={selectGroup}
-          >
-            Chat chung
-          </button>
-          <button
-            type="button"
-            className={`chat-segment-btn ${
-              room.kind === "dm" || mobileScreen === "inbox"
-                ? "chat-segment-btn-active"
-                : ""
-            }`}
-            onClick={() => setMobileScreen("inbox")}
-          >
-            Riêng tư
-          </button>
+        <div className="chat-mobile-bar">
+          <ChatSegment
+            room={room}
+            mobileScreen={mobileScreen}
+            onGroup={selectGroup}
+            onInbox={openInbox}
+          />
         </div>
 
         <header className="chat-header">
@@ -335,7 +371,7 @@ export function SimpleChat({
             <button
               type="button"
               className="chat-back-btn lg:hidden"
-              onClick={() => setMobileScreen("inbox")}
+              onClick={openInbox}
               aria-label="Danh sách"
             >
               <IconChevronLeft className="h-5 w-5" />
@@ -343,10 +379,8 @@ export function SimpleChat({
           )}
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-semibold text-fg">
-              {roomTitle(room)}
-            </p>
-            <p className="text-xs text-muted">
+            <p className="truncate text-sm font-semibold text-fg">{roomTitle(room)}</p>
+            <p className="truncate text-[11px] text-muted">
               {room.kind === "group"
                 ? `${onlineCount} online · ${members.length + 1} thành viên`
                 : "Tin nhắn riêng tư"}
@@ -354,84 +388,86 @@ export function SimpleChat({
           </div>
         </header>
 
-        <div className="chat-messages">
-          {loading && (
-            <p className="py-8 text-center text-sm text-subtle">Đang tải...</p>
-          )}
+        <div className="chat-body">
+          <div className="chat-messages">
+            {loading && (
+              <p className="py-8 text-center text-sm text-subtle">Đang tải...</p>
+            )}
 
-          {!loading && visibleMessages.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-4xl">💬</p>
-              <p className="mt-3 font-medium text-fg">
-                {room.kind === "group"
-                  ? "Bắt đầu trò chuyện với team"
-                  : `Nhắn riêng với ${room.kind === "dm" ? room.userName : "..."}`}
-              </p>
-              <p className="mt-1 text-sm text-muted">Gửi tin nhắn đầu tiên bên dưới.</p>
-            </div>
-          )}
+            {!loading && visibleMessages.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="chat-empty-icon">💬</div>
+                <p className="mt-3 text-sm font-medium text-fg">
+                  {room.kind === "group"
+                    ? "Bắt đầu trò chuyện với team"
+                    : `Nhắn riêng với ${room.kind === "dm" ? room.userName : "..."}`}
+                </p>
+                <p className="mt-1 text-xs text-muted">Gửi tin nhắn đầu tiên bên dưới.</p>
+              </div>
+            )}
 
-          {visibleMessages.map((msg) => {
-            const isMe = msg.senderId === currentUser.id;
-            return (
-              <div
-                key={msg.id}
-                className={`chat-bubble-row ${isMe ? "chat-bubble-row-me" : ""}`}
-              >
-                {!isMe && (
-                  <UserAvatar
-                    name={msg.senderName}
-                    avatarUrl={msg.senderAvatarUrl}
-                    userId={msg.senderId}
-                    size="sm"
-                  />
-                )}
+            {visibleMessages.map((msg) => {
+              const isMe = msg.senderId === currentUser.id;
+              return (
                 <div
-                  className={`chat-bubble ${isMe ? "chat-bubble-me" : "chat-bubble-other"}`}
+                  key={msg.id}
+                  className={`chat-bubble-row ${isMe ? "chat-bubble-row-me" : ""}`}
                 >
                   {!isMe && (
-                    <p className="chat-meta chat-meta-other">{msg.senderName}</p>
+                    <UserAvatar
+                      name={msg.senderName}
+                      avatarUrl={msg.senderAvatarUrl}
+                      userId={msg.senderId}
+                      size="sm"
+                    />
                   )}
-                  <p className="whitespace-pre-wrap break-words">{msg.text}</p>
-                  <p className={`chat-time ${isMe ? "text-muted" : "text-subtle"}`}>
-                    {formatTime(msg.createdAt)}
-                    {msg._pending ? " · đang gửi" : ""}
-                  </p>
+                  <div
+                    className={`chat-bubble ${isMe ? "chat-bubble-me" : "chat-bubble-other"}`}
+                  >
+                    {!isMe && (
+                      <p className="chat-meta chat-meta-other">{msg.senderName}</p>
+                    )}
+                    <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                    <p className="chat-time">
+                      {formatTime(msg.createdAt)}
+                      {msg._pending ? " · đang gửi" : ""}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-          <div ref={bottomRef} />
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
+
+          <form onSubmit={(e) => void sendMessage(e)} className="chat-input-bar">
+            <textarea
+              ref={inputRef}
+              className="chat-input"
+              rows={1}
+              maxLength={2000}
+              placeholder={
+                room.kind === "group" ? "Nhắn chat chung..." : "Nhắn tin riêng..."
+              }
+              value={text}
+              onChange={(e) => {
+                setText(e.target.value);
+                resizeInput(e.target);
+              }}
+              onKeyDown={handleKeyDown}
+              enterKeyHint="send"
+            />
+            <button
+              type="submit"
+              className="chat-send-btn"
+              disabled={!text.trim()}
+              aria-label="Gửi"
+            >
+              <IconSend className="h-5 w-5" />
+            </button>
+          </form>
+
+          {error && <p className="chat-error">{error}</p>}
         </div>
-
-        <form onSubmit={(e) => void sendMessage(e)} className="chat-input-bar">
-          <textarea
-            ref={inputRef}
-            className="chat-input"
-            rows={1}
-            maxLength={2000}
-            placeholder={
-              room.kind === "group" ? "Nhắn chat chung..." : "Nhắn tin riêng..."
-            }
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              resizeInput(e.target);
-            }}
-            onKeyDown={handleKeyDown}
-            enterKeyHint="send"
-          />
-          <button
-            type="submit"
-            className="chat-send-btn"
-            disabled={!text.trim()}
-            aria-label="Gửi"
-          >
-            <IconSend className="h-5 w-5" />
-          </button>
-        </form>
-
-        {error && <p className="chat-error">{error}</p>}
       </div>
     </div>
   );
