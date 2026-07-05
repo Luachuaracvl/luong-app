@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-/** Co layout chat theo visualViewport khi bàn phím mobile mở. */
+/** Chỉ co layout khi bàn phím mobile mở — tránh thu nhỏ vùng chat lúc bình thường. */
 export function useMobileChatViewport(enabled: boolean) {
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return;
@@ -20,15 +20,20 @@ export function useMobileChatViewport(enabled: boolean) {
       document.body.classList.add("chat-layout-active");
 
       const vv = window.visualViewport;
-      const fallback = `calc(100dvh - var(--bottom-nav-height))`;
       if (!vv) {
-        root.style.setProperty("--chat-vh", fallback);
+        root.style.removeProperty("--chat-vh");
+        document.body.classList.remove("chat-keyboard-open");
         return;
       }
 
-      root.style.setProperty("--chat-vh", `${Math.round(vv.height)}px`);
       const keyboardOpen = vv.height < window.innerHeight * 0.82;
       document.body.classList.toggle("chat-keyboard-open", keyboardOpen);
+
+      if (keyboardOpen) {
+        root.style.setProperty("--chat-vh", `${Math.round(vv.height)}px`);
+      } else {
+        root.style.removeProperty("--chat-vh");
+      }
     };
 
     apply();
