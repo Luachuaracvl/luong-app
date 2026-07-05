@@ -137,18 +137,21 @@ export default function EmployeeDashboard({ user }: { user: User }) {
             ? "Trao đổi với admin và đồng nghiệp"
             : "Cập nhật thông tin và mật khẩu"
       }
+      fullBleed={tab === "chat"}
     >
       <AlertBanner type="error" message={error} onDismiss={() => setError("")} />
 
         {tab === "chat" && (
-          <ChatPanel
-            currentUser={{
-              id: profileUser.id,
-              name: profileUser.name,
-              role: profileUser.role,
-              avatarUrl: profileUser.avatarUrl,
-            }}
-          />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <ChatPanel
+              currentUser={{
+                id: profileUser.id,
+                name: profileUser.name,
+                role: profileUser.role,
+                avatarUrl: profileUser.avatarUrl,
+              }}
+            />
+          </div>
         )}
 
         {tab === "profile" && (

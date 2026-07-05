@@ -29,6 +29,7 @@ export function DashboardShell({
   pageSubtitle,
   children,
   headerAction,
+  fullBleed,
 }: {
   user: User;
   navItems: NavItem[];
@@ -38,6 +39,7 @@ export function DashboardShell({
   pageSubtitle?: string;
   children: React.ReactNode;
   headerAction?: React.ReactNode;
+  fullBleed?: boolean;
 }) {
   const router = useRouter();
 
@@ -103,7 +105,7 @@ export function DashboardShell({
         </div>
       </aside>
 
-      <div className="main-area">
+      <div className={`main-area ${fullBleed ? "main-area-full" : ""}`}>
         <header className="topbar">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -132,7 +134,9 @@ export function DashboardShell({
           </div>
         </header>
 
-        <main className="page-content">{children}</main>
+        <main className={fullBleed ? "page-content page-content-full" : "page-content"}>
+          {children}
+        </main>
       </div>
 
       <nav className="bottom-nav">

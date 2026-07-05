@@ -714,6 +714,7 @@ export default function AdminDashboard({ user }: { user: User }) {
           </button>
         ) : undefined
       }
+      fullBleed={tab === "chat"}
     >
       <AlertBanner type="success" message={message} onDismiss={() => setMessage("")} />
       <AlertBanner type="error" message={error} onDismiss={() => setError("")} />
@@ -1123,14 +1124,16 @@ export default function AdminDashboard({ user }: { user: User }) {
       </Modal>
 
         {tab === "chat" && (
-          <ChatPanel
-            currentUser={{
-              id: profileUser.id,
-              name: profileUser.name,
-              role: profileUser.role,
-              avatarUrl: profileUser.avatarUrl,
-            }}
-          />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <ChatPanel
+              currentUser={{
+                id: profileUser.id,
+                name: profileUser.name,
+                role: profileUser.role,
+                avatarUrl: profileUser.avatarUrl,
+              }}
+            />
+          </div>
         )}
 
         {tab === "profile" && (

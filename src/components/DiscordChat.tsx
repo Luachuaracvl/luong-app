@@ -402,8 +402,8 @@ export function DiscordChat({
 
       <aside className={`discord-sidebar ${showMobileSidebar ? "discord-sidebar-open" : ""}`}>
         <div className="discord-sidebar-header">
-          <p className="font-bold text-white">Quản lý Lương</p>
-          <p className="text-xs text-slate-400">{onlineCount} đang online</p>
+          <p className="font-bold text-slate-900">Chat nhóm</p>
+          <p className="text-xs text-slate-500">{onlineCount} đang online</p>
         </div>
 
         <div className="discord-sidebar-section">
@@ -421,7 +421,7 @@ export function DiscordChat({
             >
               <span className="text-slate-400">#</span>
               {ch.name}
-              {ch.adminOnly && <span className="ml-auto text-[10px] text-amber-400">Admin</span>}
+              {ch.adminOnly && <span className="ml-auto text-[10px] text-amber-600">Admin</span>}
             </button>
           ))}
         </div>
@@ -446,10 +446,10 @@ export function DiscordChat({
         </div>
 
         {currentUser.role === "ADMIN" && (
-          <form onSubmit={createChannel} className="discord-sidebar-section border-t border-slate-800 p-3">
+          <form onSubmit={createChannel} className="discord-sidebar-section border-t border-slate-200 p-3">
             <p className="discord-sidebar-label mb-2">Tạo kênh mới</p>
             <input
-              className="input mb-2 bg-slate-800 text-white placeholder:text-slate-500"
+              className="input mb-2"
               placeholder="ten-kenh"
               value={newChannelName}
               onChange={(e) => setNewChannelName(e.target.value)}
@@ -659,7 +659,11 @@ export function DiscordChat({
         </form>
       </div>
 
-      {error && <p className="mt-2 rounded-xl bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="absolute bottom-16 left-4 right-4 z-10 rounded-xl bg-red-50 px-4 py-2 text-sm text-red-600 shadow-sm ring-1 ring-red-100 lg:bottom-4">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

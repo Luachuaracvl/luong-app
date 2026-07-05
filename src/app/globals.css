@@ -64,12 +64,20 @@ button {
   @apply flex min-h-screen flex-1 flex-col lg:ml-64;
 }
 
+.main-area-full {
+  @apply h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden;
+}
+
 .topbar {
   @apply sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-4;
 }
 
 .page-content {
   @apply flex-1 px-4 py-5 pb-24 sm:px-6 sm:py-8 lg:pb-8;
+}
+
+.page-content-full {
+  @apply flex min-h-0 flex-col overflow-hidden p-0 pb-16 sm:p-0 lg:pb-0;
 }
 
 .bottom-nav {
@@ -385,8 +393,7 @@ table.data-table tr:last-child td {
 
 /* Discord-style chat */
 .discord-chat {
-  @apply relative flex h-[calc(100vh-11rem)] min-h-[480px] overflow-hidden rounded-2xl border border-slate-200/80 bg-white lg:h-[calc(100vh-9rem)];
-  box-shadow: var(--card-shadow);
+  @apply relative flex min-h-0 w-full flex-1 overflow-hidden bg-white;
 }
 
 .discord-overlay {
@@ -394,7 +401,7 @@ table.data-table tr:last-child td {
 }
 
 .discord-sidebar {
-  @apply absolute inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col overflow-y-auto bg-slate-900 text-slate-200 transition-transform lg:relative lg:z-0 lg:w-60 lg:translate-x-0;
+  @apply absolute inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col overflow-y-auto border-r border-slate-200 bg-white text-slate-700 transition-transform lg:relative lg:z-0 lg:w-60 lg:translate-x-0;
 }
 
 .discord-sidebar-open {
@@ -402,7 +409,7 @@ table.data-table tr:last-child td {
 }
 
 .discord-sidebar-header {
-  @apply border-b border-slate-800 px-4 py-4;
+  @apply border-b border-slate-200 px-4 py-4;
 }
 
 .discord-sidebar-section {
@@ -414,11 +421,11 @@ table.data-table tr:last-child td {
 }
 
 .discord-nav-item {
-  @apply mb-0.5 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white;
+  @apply mb-0.5 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900;
 }
 
 .discord-nav-item-active {
-  @apply bg-slate-800 text-white;
+  @apply bg-indigo-50 font-medium text-indigo-700 hover:bg-indigo-50 hover:text-indigo-700;
 }
 
 .discord-main {
@@ -470,7 +477,7 @@ table.data-table tr:last-child td {
 }
 
 .discord-members {
-  @apply hidden w-56 shrink-0 overflow-y-auto border-l border-slate-100 bg-slate-50/80 p-2 md:block;
+  @apply hidden w-56 shrink-0 overflow-y-auto border-l border-slate-200 bg-slate-50/50 p-2 md:block;
 }
 
 .discord-members-open {
