@@ -32,6 +32,7 @@ export async function GET(_request: Request, { params }: Params) {
         name: employee.name,
         salaryPercentage: employee.salaryPercentage,
         isActive: employee.isActive,
+        avatarUrl: employee.avatarUrl ?? null,
         percentageHistory: percentageHistory.map((h) => ({
           id: h.id,
           percentage: h.percentage,

@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertBanner } from "./AlertBanner";
+import { ChatPanel } from "./ChatPanel";
 import { DashboardShell } from "./DashboardShell";
 import { EmptyState } from "./EmptyState";
-import { IconDownload, IconProfile, IconSalary } from "./Icons";
+import { IconChat, IconDownload, IconProfile, IconSalary } from "./Icons";
 import { MonthFilter, filterByMonth, getMonthOptions } from "./MonthFilter";
 import { ProfilePanel } from "./ProfilePanel";
 import { SalaryTable } from "./SalaryTable";
@@ -27,7 +28,7 @@ type User = {
   avatarUrl?: string | null;
 };
 
-type Tab = "salary" | "profile";
+type Tab = "salary" | "chat" | "profile";
 
 type SalaryData = {
   employee: { id: string; name: string; username: string };
@@ -107,6 +108,7 @@ export default function EmployeeDashboard({ user }: { user: User }) {
 
   const navItems = [
     { id: "salary", label: "Lương của tôi", shortLabel: "Lương", icon: <IconSalary className="h-5 w-5" /> },
+    { id: "chat", label: "Chat", shortLabel: "Chat", icon: <IconChat className="h-5 w-5" /> },
     { id: "profile", label: "Hồ sơ", shortLabel: "Hồ sơ", icon: <IconProfile className="h-5 w-5" /> },
   ];
 
@@ -116,16 +118,35 @@ export default function EmployeeDashboard({ user }: { user: User }) {
       navItems={navItems}
       activeTab={tab}
       onTabChange={(id) => setTab(id as Tab)}
-      pageTitle={tab === "salary" ? getGreeting(profileUser.name) : "Hồ sơ cá nhân"}
+      pageTitle={
+        tab === "salary"
+          ? getGreeting(profileUser.name)
+          : tab === "chat"
+            ? "Chat nhóm"
+            : "Hồ sơ cá nhân"
+      }
       pageSubtitle={
         tab === "salary"
           ? "Theo dõi lương hàng ngày và lịch sử chi trả"
-          : "Cập nhật thông tin và mật khẩu"
+          : tab === "chat"
+            ? "Trao đổi với admin và đồng nghiệp"
+            : "Cập nhật thông tin và mật khẩu"
       }
     >
       <AlertBanner type="error" message={error} onDismiss={() => setError("")} />
 
-      {tab === "profile" && (
+        {tab === "chat" && (
+          <ChatPanel
+            currentUser={{
+              id: profileUser.id,
+              name: profileUser.name,
+              role: profileUser.role,
+              avatarUrl: profileUser.avatarUrl,
+            }}
+          />
+        )}
+
+        {tab === "profile" && (
         <ProfilePanel
           user={{
             id: profileUser.id,

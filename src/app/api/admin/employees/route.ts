@@ -21,6 +21,7 @@ export async function GET() {
       name: e.name,
       salaryPercentage: e.salaryPercentage,
       isActive: e.isActive,
+      avatarUrl: e.avatarUrl ?? null,
       totalSalary: e.totalSalary ?? 0,
       createdAt: e.createdAt?.toDate?.()?.toISOString() ?? null,
     }));

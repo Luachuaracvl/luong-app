@@ -48,3 +48,12 @@ export type PercentageHistoryDoc = {
   effectiveFrom: Timestamp;
   createdAt: Timestamp;
 };
+
+export type ChatMessageDoc = {
+  senderId: string;
+  senderName: string;
+  senderRole: Role;
+  senderAvatarUrl?: string | null;
+  text: string;
+  createdAt: Timestamp;
+};

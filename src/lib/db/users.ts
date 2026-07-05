@@ -34,6 +34,16 @@ export async function findEmployees() {
     .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
 }
 
+export async function findAllUsersForChat() {
+  const snap = await getDb().collection(COLLECTION).get();
+  return snap.docs
+    .map((doc) => ({ id: doc.id, ...(doc.data() as UserDoc) }))
+    .sort((a, b) => {
+      if (a.role !== b.role) return a.role === "ADMIN" ? -1 : 1;
+      return a.name.localeCompare(b.name, "vi");
+    });
+}
+
 export async function createUser(data: {
   username: string;
   passwordHash: string;

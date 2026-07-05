@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertBanner } from "./AlertBanner";
 import { DashboardShell } from "./DashboardShell";
 import { EmptyState } from "./EmptyState";
+import { ChatPanel } from "./ChatPanel";
 import {
+  IconChat,
   IconDashboard,
   IconDownload,
   IconPlus,
@@ -21,6 +23,7 @@ import { RevenueChart } from "./RevenueChart";
 import { SalaryTable } from "./SalaryTable";
 import { SectionHeader } from "./SectionHeader";
 import { StatCard } from "./StatCard";
+import { UserAvatar } from "./UserAvatar";
 import {
   computeMonthlySummary,
   dateToInputValue,
@@ -52,6 +55,7 @@ type Employee = {
   salaryPercentage: number;
   isActive: boolean;
   totalSalary: number;
+  avatarUrl?: string | null;
 };
 
 type DayStat = {
@@ -79,7 +83,7 @@ type EmployeeDetail = {
   totalRevenue: number;
 };
 
-type Tab = "overview" | "revenue" | "employees" | "profile";
+type Tab = "overview" | "revenue" | "employees" | "chat" | "profile";
 
 const PAGE_TITLES: Record<Tab, { title: string; subtitle: string }> = {
   overview: {
@@ -93,6 +97,10 @@ const PAGE_TITLES: Record<Tab, { title: string; subtitle: string }> = {
   employees: {
     title: "Nhân viên",
     subtitle: "Quản lý tài khoản, phần trăm lương và lịch sử chi trả",
+  },
+  chat: {
+    title: "Chat nhóm",
+    subtitle: "Trao đổi nhanh giữa admin và nhân viên",
   },
   profile: {
     title: "Hồ sơ",
@@ -147,6 +155,7 @@ export default function AdminDashboard({ user }: { user: User }) {
     { id: "overview", label: "Tổng quan", shortLabel: "Tổng quan", icon: <IconDashboard className="h-5 w-5" /> },
     { id: "revenue", label: "Doanh thu", shortLabel: "Doanh thu", icon: <IconRevenue className="h-5 w-5" /> },
     { id: "employees", label: "Nhân viên", shortLabel: "NV", icon: <IconUsers className="h-5 w-5" /> },
+    { id: "chat", label: "Chat", shortLabel: "Chat", icon: <IconChat className="h-5 w-5" /> },
     { id: "profile", label: "Hồ sơ", shortLabel: "Hồ sơ", icon: <IconProfile className="h-5 w-5" /> },
   ];
 
@@ -269,6 +278,7 @@ export default function AdminDashboard({ user }: { user: User }) {
       salaryPercentage: payload.salaryPercentage,
       isActive: true,
       totalSalary: 0,
+      avatarUrl: null,
     };
 
     setEmployees((list) => [optimistic, ...list]);
@@ -301,6 +311,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                 salaryPercentage: data.employee.salaryPercentage,
                 isActive: data.employee.isActive,
                 totalSalary: 0,
+                avatarUrl: data.employee.avatarUrl ?? null,
               }
             : e
         )
@@ -888,13 +899,14 @@ export default function AdminDashboard({ user }: { user: User }) {
                       key={emp.id}
                       type="button"
                       onClick={() => loadEmployeeDetail(emp.id)}
-                      className={`flex w-full flex-col gap-2 rounded-xl border px-4 py-3 text-left transition hover:shadow-sm sm:flex-row sm:items-center sm:justify-between ${
+                      className={`flex w-full gap-3 rounded-xl border px-4 py-3 text-left transition hover:shadow-sm sm:items-center ${
                         selectedEmployee?.employee.id === emp.id
                           ? "border-indigo-300 bg-indigo-50/80 ring-1 ring-indigo-200"
                           : "border-slate-100 hover:border-slate-200"
                       }`}
                     >
-                      <div className="min-w-0">
+                      <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} size="md" />
+                      <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-slate-800">{emp.name}</p>
                           {!emp.isActive && <span className="badge badge-red">Tạm ngưng</span>}
@@ -916,19 +928,30 @@ export default function AdminDashboard({ user }: { user: User }) {
             {selectedEmployee ? (
               <>
                 <div className="card">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-xl font-bold text-slate-900">{selectedEmployee.employee.name}</h2>
-                        <span className={`badge ${selectedEmployee.employee.isActive ? "badge-green" : "badge-red"}`}>
-                          {selectedEmployee.employee.isActive ? "Đang hoạt động" : "Tạm ngưng"}
-                        </span>
+                  <div className="flex flex-wrap items-start gap-4">
+                    <UserAvatar
+                      name={selectedEmployee.employee.name}
+                      avatarUrl={selectedEmployee.employee.avatarUrl}
+                      size="lg"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-xl font-bold text-slate-900">
+                              {selectedEmployee.employee.name}
+                            </h2>
+                            <span className={`badge ${selectedEmployee.employee.isActive ? "badge-green" : "badge-red"}`}>
+                              {selectedEmployee.employee.isActive ? "Đang hoạt động" : "Tạm ngưng"}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-500">@{selectedEmployee.employee.username}</p>
+                        </div>
+                        <button type="button" onClick={toggleEmployeeActive} className={`btn ${selectedEmployee.employee.isActive ? "btn-danger" : "btn-primary"}`}>
+                          {selectedEmployee.employee.isActive ? "Tạm ngưng" : "Kích hoạt lại"}
+                        </button>
                       </div>
-                      <p className="text-sm text-slate-500">@{selectedEmployee.employee.username}</p>
                     </div>
-                    <button type="button" onClick={toggleEmployeeActive} className={`btn ${selectedEmployee.employee.isActive ? "btn-danger" : "btn-primary"}`}>
-                      {selectedEmployee.employee.isActive ? "Tạm ngưng" : "Kích hoạt lại"}
-                    </button>
                   </div>
 
                   <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -1005,7 +1028,18 @@ export default function AdminDashboard({ user }: { user: User }) {
         )}
       </Modal>
 
-      {tab === "profile" && (
+        {tab === "chat" && (
+          <ChatPanel
+            currentUser={{
+              id: profileUser.id,
+              name: profileUser.name,
+              role: profileUser.role,
+              avatarUrl: profileUser.avatarUrl,
+            }}
+          />
+        )}
+
+        {tab === "profile" && (
         <ProfilePanel
           user={{
             id: profileUser.id,
