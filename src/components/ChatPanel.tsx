@@ -83,18 +83,18 @@ export function ChatPanel({
 
         if (cancelled) return;
 
-        let nextMembers: ChatMember[] | null = null;
-        let nextMessages: ChatMessage[] | null = null;
+        let nextMembers: ChatMember[] | undefined;
+        let nextMessages: ChatMessage[] | undefined;
 
         if (membersRes.ok) {
           const data = await membersRes.json();
-          nextMembers = data.members ?? [];
+          nextMembers = (data.members ?? []) as ChatMember[];
           setMembers(nextMembers);
         }
 
         if (messagesRes.ok) {
           const data = await messagesRes.json();
-          nextMessages = data.messages ?? [];
+          nextMessages = (data.messages ?? []) as ChatMessage[];
           setMessages(nextMessages);
           const last = nextMessages.at(-1);
           lastMessageAtRef.current = last?.createdAt ?? null;
