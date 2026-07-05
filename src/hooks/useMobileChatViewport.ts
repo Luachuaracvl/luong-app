@@ -13,9 +13,11 @@ export function useMobileChatViewport(enabled: boolean) {
     const apply = () => {
       if (!mq.matches) {
         root.style.removeProperty("--chat-vh");
-        document.body.classList.remove("chat-keyboard-open");
+        document.body.classList.remove("chat-keyboard-open", "chat-layout-active");
         return;
       }
+
+      document.body.classList.add("chat-layout-active");
 
       const vv = window.visualViewport;
       const fallback = `calc(100dvh - var(--bottom-nav-height))`;
@@ -39,7 +41,7 @@ export function useMobileChatViewport(enabled: boolean) {
       window.visualViewport?.removeEventListener("resize", apply);
       window.visualViewport?.removeEventListener("scroll", apply);
       root.style.removeProperty("--chat-vh");
-      document.body.classList.remove("chat-keyboard-open");
+      document.body.classList.remove("chat-keyboard-open", "chat-layout-active");
     };
   }, [enabled]);
 }

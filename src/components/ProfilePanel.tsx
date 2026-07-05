@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRef, useState } from "react";
 import { writeAvatar, readAvatar } from "@/lib/avatar-cache";

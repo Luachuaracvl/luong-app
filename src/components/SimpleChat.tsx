@@ -60,41 +60,6 @@ function roomTitle(room: Room) {
   return room.kind === "group" ? "Chat chung" : room.userName;
 }
 
-function ChatSegment({
-  room,
-  mobileScreen,
-  onGroup,
-  onInbox,
-}: {
-  room: Room;
-  mobileScreen: MobileScreen;
-  onGroup: () => void;
-  onInbox: () => void;
-}) {
-  return (
-    <div className="chat-segment">
-      <button
-        type="button"
-        className={`chat-segment-btn ${
-          room.kind === "group" && mobileScreen === "chat" ? "chat-segment-btn-active" : ""
-        }`}
-        onClick={onGroup}
-      >
-        Chat chung
-      </button>
-      <button
-        type="button"
-        className={`chat-segment-btn ${
-          mobileScreen === "inbox" || room.kind === "dm" ? "chat-segment-btn-active" : ""
-        }`}
-        onClick={onInbox}
-      >
-        Riêng tư
-      </button>
-    </div>
-  );
-}
-
 export function SimpleChat({
   currentUser,
 }: {
@@ -117,7 +82,7 @@ export function SimpleChat({
   const lastMessageAtRef = useRef<string | null>(null);
   const onlineCount = useOnlineCount();
 
-  useMobileChatViewport(mobileScreen === "chat");
+  useMobileChatViewport(true);
 
   const scrollToBottom = useCallback((smooth = true) => {
     bottomRef.current?.scrollIntoView({
@@ -341,42 +306,23 @@ export function SimpleChat({
   return (
     <div className="chat-app">
       <aside className={`chat-sidebar ${inboxOpen ? "chat-sidebar-open" : ""}`}>
-        <div className="chat-mobile-bar lg:hidden">
-          <ChatSegment
-            room={room}
-            mobileScreen={mobileScreen}
-            onGroup={selectGroup}
-            onInbox={openInbox}
-          />
-        </div>
         <div className="chat-sidebar-header">
           <p className="text-sm font-semibold text-fg">Tin nhắn</p>
           <p className="text-xs text-muted">{onlineCount} đang online</p>
         </div>
-        {sidebarList}
+        <div className="chat-sidebar-list">{sidebarList}</div>
       </aside>
 
       <div className={`chat-shell ${chatOpen ? "chat-shell-open" : ""}`}>
-        <div className="chat-mobile-bar">
-          <ChatSegment
-            room={room}
-            mobileScreen={mobileScreen}
-            onGroup={selectGroup}
-            onInbox={openInbox}
-          />
-        </div>
-
         <header className="chat-header">
-          {room.kind === "dm" && (
-            <button
-              type="button"
-              className="chat-back-btn lg:hidden"
-              onClick={openInbox}
-              aria-label="Danh sách"
-            >
-              <IconChevronLeft className="h-5 w-5" />
-            </button>
-          )}
+          <button
+            type="button"
+            className="chat-back-btn lg:hidden"
+            onClick={openInbox}
+            aria-label="Danh sách tin nhắn"
+          >
+            <IconChevronLeft className="h-5 w-5" />
+          </button>
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-fg">{roomTitle(room)}</p>
@@ -388,86 +334,84 @@ export function SimpleChat({
           </div>
         </header>
 
-        <div className="chat-body">
-          <div className="chat-messages">
-            {loading && (
-              <p className="py-8 text-center text-sm text-subtle">Đang tải...</p>
-            )}
+        <div className="chat-messages">
+          {loading && (
+            <p className="py-8 text-center text-sm text-subtle">Đang tải...</p>
+          )}
 
-            {!loading && visibleMessages.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="chat-empty-icon">💬</div>
-                <p className="mt-3 text-sm font-medium text-fg">
-                  {room.kind === "group"
-                    ? "Bắt đầu trò chuyện với team"
-                    : `Nhắn riêng với ${room.kind === "dm" ? room.userName : "..."}`}
-                </p>
-                <p className="mt-1 text-xs text-muted">Gửi tin nhắn đầu tiên bên dưới.</p>
-              </div>
-            )}
+          {!loading && visibleMessages.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="chat-empty-icon">💬</div>
+              <p className="mt-3 text-sm font-medium text-fg">
+                {room.kind === "group"
+                  ? "Bắt đầu trò chuyện với team"
+                  : `Nhắn riêng với ${room.kind === "dm" ? room.userName : "..."}`}
+              </p>
+              <p className="mt-1 text-xs text-muted">Gửi tin nhắn đầu tiên bên dưới.</p>
+            </div>
+          )}
 
-            {visibleMessages.map((msg) => {
-              const isMe = msg.senderId === currentUser.id;
-              return (
+          {visibleMessages.map((msg) => {
+            const isMe = msg.senderId === currentUser.id;
+            return (
+              <div
+                key={msg.id}
+                className={`chat-bubble-row ${isMe ? "chat-bubble-row-me" : ""}`}
+              >
+                {!isMe && (
+                  <UserAvatar
+                    name={msg.senderName}
+                    avatarUrl={msg.senderAvatarUrl}
+                    userId={msg.senderId}
+                    size="sm"
+                  />
+                )}
                 <div
-                  key={msg.id}
-                  className={`chat-bubble-row ${isMe ? "chat-bubble-row-me" : ""}`}
+                  className={`chat-bubble ${isMe ? "chat-bubble-me" : "chat-bubble-other"}`}
                 >
                   {!isMe && (
-                    <UserAvatar
-                      name={msg.senderName}
-                      avatarUrl={msg.senderAvatarUrl}
-                      userId={msg.senderId}
-                      size="sm"
-                    />
+                    <p className="chat-meta chat-meta-other">{msg.senderName}</p>
                   )}
-                  <div
-                    className={`chat-bubble ${isMe ? "chat-bubble-me" : "chat-bubble-other"}`}
-                  >
-                    {!isMe && (
-                      <p className="chat-meta chat-meta-other">{msg.senderName}</p>
-                    )}
-                    <p className="whitespace-pre-wrap break-words">{msg.text}</p>
-                    <p className="chat-time">
-                      {formatTime(msg.createdAt)}
-                      {msg._pending ? " · đang gửi" : ""}
-                    </p>
-                  </div>
+                  <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                  <p className="chat-time">
+                    {formatTime(msg.createdAt)}
+                    {msg._pending ? " · đang gửi" : ""}
+                  </p>
                 </div>
-              );
-            })}
-            <div ref={bottomRef} />
-          </div>
-
-          <form onSubmit={(e) => void sendMessage(e)} className="chat-input-bar">
-            <textarea
-              ref={inputRef}
-              className="chat-input"
-              rows={1}
-              maxLength={2000}
-              placeholder={
-                room.kind === "group" ? "Nhắn chat chung..." : "Nhắn tin riêng..."
-              }
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value);
-                resizeInput(e.target);
-              }}
-              onKeyDown={handleKeyDown}
-              enterKeyHint="send"
-            />
-            <button
-              type="submit"
-              className="chat-send-btn"
-              disabled={!text.trim()}
-              aria-label="Gửi"
-            >
-              <IconSend className="h-5 w-5" />
-            </button>
-          </form>
-
-          {error && <p className="chat-error">{error}</p>}
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
         </div>
+
+        {error && <p className="chat-error">{error}</p>}
+
+        <form onSubmit={(e) => void sendMessage(e)} className="chat-input-bar">
+          <textarea
+            ref={inputRef}
+            className="chat-input"
+            rows={1}
+            maxLength={2000}
+            placeholder={
+              room.kind === "group" ? "Nhắn chat chung..." : "Nhắn tin riêng..."
+            }
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              resizeInput(e.target);
+            }}
+            onKeyDown={handleKeyDown}
+            enterKeyHint="send"
+          />
+          <button
+            type="submit"
+            className="chat-send-btn"
+            disabled={!text.trim()}
+            aria-label="Gửi"
+          >
+            <IconSend className="h-5 w-5" />
+          </button>
+        </form>
       </div>
     </div>
   );
