@@ -12,6 +12,7 @@ export type NavItem = {
 };
 
 type User = {
+  id?: string;
   name: string;
   role: "ADMIN" | "EMPLOYEE";
   avatarUrl?: string | null;
@@ -77,7 +78,7 @@ export function DashboardShell({
 
         <div className="sidebar-footer">
           <div className="mb-2 flex items-center gap-3 rounded-xl bg-slate-800/60 px-3 py-2.5">
-            <UserAvatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
+            <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{user.name}</p>
               <p className="truncate text-xs text-slate-400">
@@ -108,7 +109,7 @@ export function DashboardShell({
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2 lg:hidden">
-              <UserAvatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
+              <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
             </div>
             {headerAction && (
               <div className="hidden shrink-0 sm:block">{headerAction}</div>

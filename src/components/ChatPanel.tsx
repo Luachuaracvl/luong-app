@@ -7,6 +7,7 @@ import {
   type CachedChatMember,
   type CachedChatMessage,
 } from "@/lib/chat-client-cache";
+import { cacheAvatars } from "@/lib/avatar-cache";
 import { UserAvatar } from "./UserAvatar";
 
 type ChatMessage = CachedChatMessage & { _pending?: boolean };
@@ -88,6 +89,15 @@ export function ChatPanel({
   }, []);
 
   useEffect(() => {
+    if (initialCache?.members?.length) {
+      cacheAvatars(
+        initialCache.members.map((m) => ({ userId: m.id, avatarUrl: m.avatarUrl }))
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function refreshFromServer() {
@@ -109,6 +119,9 @@ export function ChatPanel({
           const data = await membersRes.json();
           nextMembers = (data.members ?? []) as ChatMember[];
           setMembers(nextMembers);
+          cacheAvatars(
+            nextMembers.map((m) => ({ userId: m.id, avatarUrl: m.avatarUrl }))
+          );
         }
 
         if (messagesRes.ok) {
@@ -278,7 +291,7 @@ export function ChatPanel({
         <div className="chat-members">
           {members.map((m) => (
             <div key={m.id} className="chat-member" title={m.name}>
-              <UserAvatar name={m.name} avatarUrl={m.avatarUrl} size="sm" />
+              <UserAvatar name={m.name} avatarUrl={m.avatarUrl} userId={m.id} size="sm" />
               <span className="chat-member-name">{m.name.split(" ")[0]}</span>
             </div>
           ))}
@@ -307,6 +320,7 @@ export function ChatPanel({
                   <UserAvatar
                     name={msg.senderName}
                     avatarUrl={msg.senderAvatarUrl}
+                    userId={msg.senderId}
                     size="sm"
                   />
                 )}

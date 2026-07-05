@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { writeAvatar, readAvatar } from "@/lib/avatar-cache";
 import { AlertBanner } from "./AlertBanner";
 import { UserAvatar } from "./UserAvatar";
 
@@ -46,7 +47,10 @@ export function ProfilePanel({
   onUpdated?: (profile: ProfileUser) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [profile, setProfile] = useState(user);
+  const [profile, setProfile] = useState(() => ({
+    ...user,
+    avatarUrl: user.avatarUrl ?? readAvatar(user.id),
+  }));
   const [name, setName] = useState(user.name);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -170,6 +174,7 @@ export function ProfilePanel({
       const avatarUrl = await compressImage(file);
       setProfile((p) => ({ ...p, avatarUrl }));
       onUpdated?.({ ...profile, avatarUrl });
+      writeAvatar(user.id, avatarUrl);
       setMessage("Đã cập nhật avatar");
 
       const res = await fetch("/api/profile", {
@@ -187,6 +192,7 @@ export function ProfilePanel({
       }
       setProfile(data.user);
       onUpdated?.(data.user);
+      writeAvatar(user.id, data.user.avatarUrl ?? null);
     } catch {
       setProfile(prevProfile);
       onUpdated?.(prevProfile);
@@ -201,6 +207,7 @@ export function ProfilePanel({
     const prevProfile = profile;
     setProfile((p) => ({ ...p, avatarUrl: null }));
     onUpdated?.({ ...profile, avatarUrl: null });
+    writeAvatar(user.id, null);
     setLoading(true);
     setError("");
     try {
@@ -218,6 +225,7 @@ export function ProfilePanel({
       }
       setProfile(data.user);
       onUpdated?.(data.user);
+      writeAvatar(user.id, data.user.avatarUrl ?? null);
       setMessage("Đã xóa avatar");
     } finally {
       setLoading(false);
@@ -242,7 +250,7 @@ export function ProfilePanel({
             className="group relative rounded-full ring-4 ring-indigo-100 transition hover:ring-indigo-200"
             title="Bấm để đổi avatar"
           >
-            <UserAvatar name={profile.name} avatarUrl={profile.avatarUrl} size="lg" />
+            <UserAvatar name={profile.name} avatarUrl={profile.avatarUrl} userId={profile.id} size="lg" />
             <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
               Đổi ảnh
             </span>

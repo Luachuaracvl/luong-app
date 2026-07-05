@@ -40,6 +40,8 @@ import {
   recalculateDayStatAmount,
 } from "@/lib/optimistic-admin";
 import { SyncIndicator } from "./SyncIndicator";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { cacheAvatars, writeAvatar } from "@/lib/avatar-cache";
 
 type User = {
   id: string;
@@ -140,8 +142,7 @@ export default function AdminDashboard({ user }: { user: User }) {
   const [overviewMonth, setOverviewMonth] = useState("all");
   const [employeeMonth, setEmployeeMonth] = useState("all");
   const [employeeSearch, setEmployeeSearch] = useState("");
-  const [profileUser, setProfileUser] = useState<User>(user);
-  const [profileLoaded, setProfileLoaded] = useState(false);
+  const { user: profileUser, setUser: setProfileUser } = useUserProfile(user);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncDone, setSyncDone] = useState("");
@@ -170,6 +171,12 @@ export default function AdminDashboard({ user }: { user: User }) {
     setOverview(data.overview);
     setDayStats(data.stats);
     setEmployees(data.employees);
+    cacheAvatars(
+      (data.employees as Employee[]).map((e) => ({
+        userId: e.id,
+        avatarUrl: e.avatarUrl,
+      }))
+    );
     if (!silent) setLoading(false);
   }, []);
 
@@ -178,17 +185,8 @@ export default function AdminDashboard({ user }: { user: User }) {
   }, [loadData]);
 
   useEffect(() => {
-    if (tab !== "profile" || profileLoaded) return;
-    fetch("/api/profile")
-      .then(async (res) => {
-        if (res.ok) {
-          const data = await res.json();
-          setProfileUser((prev) => ({ ...prev, ...data.user }));
-          setProfileLoaded(true);
-        }
-      })
-      .catch(() => {});
-  }, [tab, profileLoaded]);
+    if (user.avatarUrl) writeAvatar(user.id, user.avatarUrl);
+  }, [user.avatarUrl, user.id]);
 
   async function submitRevenue(e: React.FormEvent) {
     e.preventDefault();
@@ -965,7 +963,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                           : "border-slate-100 hover:border-slate-200"
                       }`}
                     >
-                      <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} size="md" />
+                      <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} userId={emp.id} size="md" />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-slate-800">{emp.name}</p>
@@ -992,6 +990,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                     <UserAvatar
                       name={selectedEmployee.employee.name}
                       avatarUrl={selectedEmployee.employee.avatarUrl}
+                      userId={selectedEmployee.employee.id}
                       size="lg"
                     />
                     <div className="min-w-0 flex-1">
@@ -1125,8 +1124,7 @@ export default function AdminDashboard({ user }: { user: User }) {
             avatarUrl: profileUser.avatarUrl,
           }}
           onUpdated={(p) => {
-            setProfileUser((prev) => ({ ...prev, name: p.name, avatarUrl: p.avatarUrl }));
-            setProfileLoaded(true);
+            setProfileUser({ name: p.name, avatarUrl: p.avatarUrl });
           }}
         />
       )}

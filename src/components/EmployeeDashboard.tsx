@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { writeAvatar } from "@/lib/avatar-cache";
 import { AlertBanner } from "./AlertBanner";
 import { ChatPanel } from "./ChatPanel";
 import { DashboardShell } from "./DashboardShell";
@@ -48,8 +50,7 @@ export default function EmployeeDashboard({ user }: { user: User }) {
   const [data, setData] = useState<SalaryData | null>(null);
   const [error, setError] = useState("");
   const [monthFilter, setMonthFilter] = useState("all");
-  const [profileUser, setProfileUser] = useState<User>(user);
-  const [profileLoaded, setProfileLoaded] = useState(false);
+  const { user: profileUser, setUser: setProfileUser } = useUserProfile(user);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,17 +67,8 @@ export default function EmployeeDashboard({ user }: { user: User }) {
   }, []);
 
   useEffect(() => {
-    if (tab !== "profile" || profileLoaded) return;
-    fetch("/api/profile")
-      .then(async (res) => {
-        if (res.ok) {
-          const json = await res.json();
-          setProfileUser((prev) => ({ ...prev, ...json.user }));
-          setProfileLoaded(true);
-        }
-      })
-      .catch(() => {});
-  }, [tab, profileLoaded]);
+    if (user.avatarUrl) writeAvatar(user.id, user.avatarUrl);
+  }, [user.avatarUrl, user.id]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -156,11 +148,10 @@ export default function EmployeeDashboard({ user }: { user: User }) {
             avatarUrl: profileUser.avatarUrl,
           }}
           onUpdated={(p) =>
-            setProfileUser((prev) => ({
-              ...prev,
+            setProfileUser({
               name: p.name,
               avatarUrl: p.avatarUrl,
-            }))
+            })
           }
         />
       )}

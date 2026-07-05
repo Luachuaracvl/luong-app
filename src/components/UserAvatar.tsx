@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { readAvatar, writeAvatar } from "@/lib/avatar-cache";
+
 const GRADIENTS = [
   "from-indigo-500 to-violet-600",
   "from-emerald-500 to-teal-600",
@@ -19,10 +22,12 @@ function gradientForName(name: string) {
 export function UserAvatar({
   name,
   avatarUrl,
+  userId,
   size = "md",
 }: {
   name: string;
   avatarUrl?: string | null;
+  userId?: string;
   size?: "sm" | "md" | "lg";
 }) {
   const sizeClass =
@@ -35,13 +40,32 @@ export function UserAvatar({
   const initial = name.trim().charAt(0).toUpperCase() || "?";
   const gradient = gradientForName(name);
 
-  if (avatarUrl) {
+  const [src, setSrc] = useState<string | null>(() => {
+    if (avatarUrl) return avatarUrl;
+    if (userId) return readAvatar(userId);
+    return null;
+  });
+
+  useEffect(() => {
+    const cached = userId ? readAvatar(userId) : null;
+    const next = avatarUrl ?? cached ?? null;
+    setSrc(next);
+    if (userId && avatarUrl) {
+      writeAvatar(userId, avatarUrl);
+    }
+  }, [avatarUrl, userId]);
+
+  if (src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={avatarUrl}
+        src={src}
         alt={name}
         className={`${sizeClass} shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm`}
+        onError={() => {
+          setSrc(null);
+          if (userId) writeAvatar(userId, null);
+        }}
       />
     );
   }

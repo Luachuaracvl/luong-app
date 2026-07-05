@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { writeAvatar } from "@/lib/avatar-cache";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,6 +27,10 @@ export default function LoginPage() {
       if (!res.ok) {
         setError(data.error || "Đăng nhập thất bại");
         return;
+      }
+
+      if (data.user?.avatarUrl) {
+        writeAvatar(data.user.id, data.user.avatarUrl);
       }
 
       router.push(data.user.role === "ADMIN" ? "/admin" : "/employee");

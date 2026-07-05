@@ -90,7 +90,7 @@ export function DayRevenueDetailPanel({
               {detail.employees.map((emp) => (
                 <div key={emp.userId} className="mobile-record-card">
                   <div className="mb-2 flex items-center gap-3">
-                    <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} size="sm" />
+                    <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} userId={emp.userId} size="sm" />
                     <div>
                       <p className="font-semibold text-slate-800">{emp.name}</p>
                       <p className="text-xs text-slate-500">@{emp.username}</p>
@@ -127,7 +127,7 @@ export function DayRevenueDetailPanel({
                       <tr key={emp.userId}>
                         <td>
                           <div className="flex items-center gap-3">
-                            <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} size="sm" />
+                            <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} userId={emp.userId} size="sm" />
                             <div>
                               <p className="font-medium text-slate-800">{emp.name}</p>
                               <p className="text-xs text-slate-500">

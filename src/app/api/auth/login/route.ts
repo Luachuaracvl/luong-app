@@ -47,6 +47,7 @@ export async function POST(request: Request) {
         username: user.username,
         name: user.name,
         role: user.role,
+        avatarUrl: user.avatarUrl ?? null,
       },
     });
     setSessionCookie(response, token);

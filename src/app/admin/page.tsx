@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { findUserById } from "@/lib/db/users";
 import AdminDashboard from "@/components/AdminDashboard";
 
 export default async function AdminPage() {
@@ -8,5 +9,14 @@ export default async function AdminPage() {
   if (!session) redirect("/login");
   if (session.role !== "ADMIN") redirect("/employee");
 
-  return <AdminDashboard user={session} />;
+  const dbUser = await findUserById(session.id);
+
+  return (
+    <AdminDashboard
+      user={{
+        ...session,
+        avatarUrl: dbUser?.avatarUrl ?? null,
+      }}
+    />
+  );
 }
