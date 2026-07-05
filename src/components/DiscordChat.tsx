@@ -11,6 +11,7 @@ import {
   IconSearch,
   IconSend,
 } from "./Icons";
+import { useMobileChatViewport } from "@/hooks/useMobileChatViewport";
 import { AvatarWithStatus } from "./OnlineStatus";
 import { useOnlineCount } from "./PresenceProvider";
 import { UserAvatar } from "./UserAvatar";
@@ -167,6 +168,8 @@ export function DiscordChat({
   const lastSyncAtRef = useRef<string>(new Date().toISOString());
   const onlineCount = useOnlineCount();
 
+  useMobileChatViewport(mobilePane === "room");
+
   const filteredMessages = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return messages;
@@ -250,6 +253,17 @@ export function DiscordChat({
   useEffect(() => {
     scrollToBottom();
   }, [messages.length, scrollToBottom]);
+
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const onFocus = () => {
+      window.setTimeout(() => scrollToBottom(false), 100);
+      window.setTimeout(() => scrollToBottom(false), 350);
+    };
+    el.addEventListener("focus", onFocus);
+    return () => el.removeEventListener("focus", onFocus);
+  }, [scrollToBottom, view]);
 
   useEffect(() => {
     const poll = async () => {
@@ -824,55 +838,59 @@ export function DiscordChat({
           </div>
         </div>
 
-        {replyTo && (
-          <div className="discord-reply-bar">
-            <div className="min-w-0 flex-1 border-l-[3px] border-indigo-500 pl-2">
-              <p className="text-xs font-semibold text-indigo-700">
-                Trả lời {replyTo.senderName}
-              </p>
-              <p className="truncate text-xs text-slate-500">{replyTo.text}</p>
+        <div className="discord-room-footer">
+          {replyTo && (
+            <div className="discord-reply-bar">
+              <div className="min-w-0 flex-1 border-l-[3px] border-indigo-500 pl-2">
+                <p className="text-xs font-semibold text-indigo-700">
+                  Trả lời {replyTo.senderName}
+                </p>
+                <p className="truncate text-xs text-slate-500">{replyTo.text}</p>
+              </div>
+              <button
+                type="button"
+                className="discord-icon-btn"
+                onClick={() => setReplyTo(null)}
+                aria-label="Hủy trả lời"
+              >
+                <IconClose className="h-4 w-4" />
+              </button>
             </div>
+          )}
+
+          <form onSubmit={(e) => void sendMessage(e)} className="discord-composer">
+            <div className="discord-composer-field">
+              <textarea
+                ref={inputRef}
+                className="discord-composer-input"
+                placeholder={
+                  view.type === "channel"
+                    ? `Nhắn #${view.label}`
+                    : `Nhắn @${view.label}`
+                }
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  autoResizeTextarea(e.target);
+                }}
+                onKeyDown={handleComposerKeyDown}
+                rows={1}
+                maxLength={2000}
+                enterKeyHint="send"
+                inputMode="text"
+              />
+            </div>
+
             <button
-              type="button"
-              className="discord-icon-btn"
-              onClick={() => setReplyTo(null)}
-              aria-label="Hủy trả lời"
+              type="submit"
+              className="discord-composer-send"
+              disabled={!text.trim()}
+              aria-label="Gửi"
             >
-              <IconClose className="h-4 w-4" />
+              <IconSend className="h-5 w-5" />
             </button>
-          </div>
-        )}
-
-        <form onSubmit={(e) => void sendMessage(e)} className="discord-composer">
-          <div className="discord-composer-field">
-            <textarea
-              ref={inputRef}
-              className="discord-composer-input"
-              placeholder={
-                view.type === "channel"
-                  ? `Nhắn #${view.label}`
-                  : `Nhắn @${view.label}`
-              }
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value);
-                autoResizeTextarea(e.target);
-              }}
-              onKeyDown={handleComposerKeyDown}
-              rows={1}
-              maxLength={2000}
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="discord-composer-send"
-            disabled={!text.trim()}
-            aria-label="Gửi"
-          >
-            <IconSend className="h-5 w-5" />
-          </button>
-        </form>
+          </form>
+        </div>
       </div>
 
       {actionMsg && (

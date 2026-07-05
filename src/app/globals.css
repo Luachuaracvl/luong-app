@@ -69,6 +69,14 @@ button {
   @apply h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden;
 }
 
+@media (max-width: 1023px) {
+  body.chat-keyboard-open .main-area-full {
+    height: var(--chat-vh, 100dvh);
+    max-height: var(--chat-vh, 100dvh);
+    transform: translateY(var(--chat-vt, 0px));
+  }
+}
+
 .topbar {
   @apply sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-md sm:px-6 sm:py-4;
   padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
@@ -88,12 +96,24 @@ button {
 
 .page-content-full {
   @apply flex min-h-0 flex-col overflow-hidden p-0;
-  height: calc(100dvh - var(--bottom-nav-height));
+  height: var(--chat-vh, calc(100dvh - var(--bottom-nav-height)));
+  max-height: var(--chat-vh, calc(100dvh - var(--bottom-nav-height)));
+}
+
+body.chat-keyboard-open .page-content-full {
+  height: var(--chat-vh, 100dvh);
+  max-height: var(--chat-vh, 100dvh);
+  padding-bottom: 0;
+}
+
+body.chat-keyboard-open .bottom-nav {
+  @apply pointer-events-none opacity-0;
 }
 
 @media (min-width: 1024px) {
   .page-content-full {
     height: auto;
+    max-height: none;
     @apply flex-1;
   }
 }
@@ -490,11 +510,25 @@ table.data-table tr:last-child td {
 }
 
 .discord-main.discord-pane-active {
-  @apply flex;
+  @apply flex h-full max-h-full;
 }
 
 .discord-header {
-  @apply z-10 flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 bg-white px-3 py-2.5 shadow-sm sm:px-4;
+  @apply z-20 flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 bg-white px-3 py-2.5 shadow-sm sm:px-4;
+}
+
+.discord-room-footer {
+  @apply z-20 shrink-0 border-t border-slate-200/80 bg-white;
+}
+
+@media (max-width: 1023px) {
+  .discord-room-footer {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body.chat-keyboard-open .discord-room-footer {
+    padding-bottom: 0;
+  }
 }
 
 .discord-header-back {
@@ -530,7 +564,7 @@ table.data-table tr:last-child td {
 }
 
 .discord-messages {
-  @apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 sm:px-4;
+  @apply h-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 sm:px-4;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -621,22 +655,17 @@ table.data-table tr:last-child td {
 }
 
 .discord-composer {
-  @apply flex shrink-0 items-end gap-2 border-t border-slate-200/80 bg-white px-2 py-2 sm:px-3;
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
-}
-
-@media (min-width: 1024px) {
-  .discord-composer {
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
-  }
+  @apply flex shrink-0 items-end gap-2 bg-white px-2 py-2 sm:px-3;
 }
 
 .discord-composer-field {
-  @apply relative flex min-w-0 flex-1 items-center rounded-3xl bg-slate-100 px-3 py-1 ring-1 ring-transparent transition focus-within:bg-white focus-within:ring-indigo-300;
+  @apply relative flex min-w-0 flex-1 items-end rounded-3xl bg-slate-100 px-3 py-1 ring-1 ring-transparent transition focus-within:bg-white focus-within:ring-indigo-300;
 }
 
 .discord-composer-input {
-  @apply min-h-[40px] w-full resize-none bg-transparent py-2 text-[15px] text-slate-900 outline-none placeholder:text-slate-400;
+  @apply max-h-[120px] min-h-[40px] w-full resize-none bg-transparent py-2.5 text-base leading-normal text-slate-900 outline-none placeholder:text-slate-400;
+  touch-action: manipulation;
+  font-size: 16px;
 }
 
 .discord-composer-btn {
@@ -666,6 +695,10 @@ table.data-table tr:last-child td {
 .discord-toast-error {
   @apply absolute left-3 right-3 z-20 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-600 shadow-lg ring-1 ring-red-100;
   bottom: calc(var(--bottom-nav-height) + 4.5rem);
+}
+
+body.chat-keyboard-open .discord-toast-error {
+  bottom: 5rem;
 }
 
 @media (min-width: 1024px) {
