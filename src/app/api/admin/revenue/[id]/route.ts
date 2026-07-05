@@ -3,13 +3,35 @@ import { requireSession } from "@/lib/auth";
 import { revenueToJson } from "@/lib/db/revenues";
 import {
   deleteRevenueWithSalaries,
+  getRevenueDayDetail,
   updateRevenueWithSalaries,
 } from "@/lib/salary";
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function PATCH(request: Request, { params }: Params) {
+export async function GET(_request: Request, { params }: Params) {
   try {
+    await requireSession(["ADMIN"]);
+    const { id } = await params;
+    const detail = await getRevenueDayDetail(id);
+
+    if (!detail) {
+      return NextResponse.json({ error: "Không tìm thấy doanh thu ngày này" }, { status: 404 });
+    }
+
+    return NextResponse.json({ day: detail });
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+    }
+    if (error instanceof Error && error.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
+    }
+    return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request, { params }: Params) {  try {
     await requireSession(["ADMIN"]);
     const { id } = await params;
     const body = await request.json();

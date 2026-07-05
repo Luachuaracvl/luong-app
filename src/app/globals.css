@@ -350,5 +350,25 @@ table.data-table tr:last-child td {
 }
 
 .chat-time {
-  @apply mt-1 text-[10px] opacity-70;
+  @apply text-[10px] opacity-70;
+}
+
+.chat-footer {
+  @apply mt-1 flex items-center gap-2;
+}
+
+.chat-footer-me {
+  @apply justify-end;
+}
+
+.chat-recall-btn {
+  @apply text-[10px] text-indigo-200 underline-offset-2 hover:underline;
+}
+
+.chat-bubble-other .chat-recall-btn {
+  @apply text-slate-400;
+}
+
+.chat-recalled {
+  @apply text-sm italic opacity-70;
 }

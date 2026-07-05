@@ -56,4 +56,6 @@ export type ChatMessageDoc = {
   senderAvatarUrl?: string | null;
   text: string;
   createdAt: Timestamp;
+  updatedAt?: Timestamp;
+  recalled?: boolean;
 };

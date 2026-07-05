@@ -297,6 +297,51 @@ export async function getOverviewStats() {
   };
 }
 
+export async function getRevenueDayDetail(revenueId: string) {
+  const revenue = await findRevenueById(revenueId);
+  if (!revenue) return null;
+
+  const [salaries, employees] = await Promise.all([
+    findSalaryRecordsByRevenue(revenueId),
+    findEmployees(),
+  ]);
+
+  const employeeMap = new Map(employees.map((e) => [e.id, e]));
+
+  const breakdown = salaries
+    .map((record) => {
+      const employee = employeeMap.get(record.userId);
+      const revenueAmount = record.revenueAmount ?? revenue.amount;
+      return {
+        userId: record.userId,
+        name: employee?.name ?? "Nhân viên",
+        username: employee?.username ?? "",
+        avatarUrl: employee?.avatarUrl ?? null,
+        isActive: employee?.isActive ?? true,
+        currentPercentage: employee?.salaryPercentage ?? record.percentageUsed,
+        percentageUsed: record.percentageUsed,
+        salary: record.salaryAmount,
+        revenue: revenueAmount,
+      };
+    })
+    .sort((a, b) => b.salary - a.salary || a.name.localeCompare(b.name, "vi"));
+
+  const totalSalary = breakdown.reduce((sum, row) => sum + row.salary, 0);
+  const totalPercentageUsed = breakdown.reduce((sum, row) => sum + row.percentageUsed, 0);
+
+  return {
+    id: revenue.id,
+    date: revenue.date.toDate().toISOString(),
+    revenue: revenue.amount,
+    note: revenue.note ?? null,
+    totalSalary,
+    adminNet: revenue.amount - totalSalary,
+    employeeCount: breakdown.length,
+    totalPercentageUsed,
+    employees: breakdown,
+  };
+}
+
 export async function getAdminDashboardData() {
   const [revenues, employeesRaw, globalStats] = await Promise.all([
     listRevenues(60),

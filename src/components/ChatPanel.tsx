@@ -19,14 +19,19 @@ function formatTime(iso: string) {
   }).format(new Date(iso));
 }
 
+function sortMessages(messages: ChatMessage[]) {
+  return [...messages].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+}
+
 function mergeMessages(prev: ChatMessage[], incoming: ChatMessage[]) {
   if (!incoming.length) return prev;
-  const ids = new Set(prev.map((m) => m.id));
-  const merged = [...prev];
+  const byId = new Map(prev.map((m) => [m.id, m]));
   for (const m of incoming) {
-    if (!ids.has(m.id)) merged.push(m);
+    byId.set(m.id, m);
   }
-  return merged;
+  return sortMessages([...byId.values()]);
 }
 
 export function ChatPanel({
@@ -46,12 +51,12 @@ export function ChatPanel({
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(!initialCache?.messages.length);
   const [syncing, setSyncing] = useState(false);
-  const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastMessageAtRef = useRef<string | null>(
     initialCache?.messages.at(-1)?.createdAt ?? null
   );
+  const lastSyncAtRef = useRef<string>(new Date().toISOString());
   const membersRef = useRef(members);
   membersRef.current = members;
 
@@ -60,6 +65,20 @@ export function ChatPanel({
       writeChatClientCache(currentUser.id, nextMessages, nextMembers);
     },
     [currentUser.id]
+  );
+
+  const updateMessages = useCallback(
+    (updater: (prev: ChatMessage[]) => ChatMessage[]) => {
+      setMessages((prev) => {
+        const next = updater(prev);
+        persistCache(next, membersRef.current);
+        const last = next.filter((m) => !m._pending && !m.recalled).at(-1)
+          ?? next.filter((m) => !m._pending).at(-1);
+        if (last) lastMessageAtRef.current = last.createdAt;
+        return next;
+      });
+    },
+    [persistCache]
   );
 
   const scrollToBottom = useCallback((smooth = true) => {
@@ -98,6 +117,7 @@ export function ChatPanel({
           setMessages(nextMessages);
           const last = nextMessages.at(-1);
           lastMessageAtRef.current = last?.createdAt ?? null;
+          lastSyncAtRef.current = new Date().toISOString();
         } else if (!initialCache?.messages.length) {
           setError("Không thể tải tin nhắn");
         }
@@ -135,28 +155,24 @@ export function ChatPanel({
   useEffect(() => {
     const pollMessages = async () => {
       const since = lastMessageAtRef.current;
+      const syncSince = lastSyncAtRef.current;
       const url = since
-        ? `/api/chat?since=${encodeURIComponent(since)}`
+        ? `/api/chat?since=${encodeURIComponent(since)}&syncSince=${encodeURIComponent(syncSince)}`
         : "/api/chat";
 
       try {
         const res = await fetch(url);
         if (!res.ok) return;
         const data = await res.json();
+        lastSyncAtRef.current = new Date().toISOString();
 
         if (since) {
           if (!data.messages?.length) return;
-          setMessages((prev) => {
-            const merged = mergeMessages(prev, data.messages);
-            const last = merged.filter((m) => !m._pending).at(-1);
-            lastMessageAtRef.current = last?.createdAt ?? since;
-            persistCache(merged, membersRef.current);
-            return merged;
-          });
+          updateMessages((prev) => mergeMessages(prev, data.messages));
           return;
         }
 
-        const nextMessages = data.messages ?? [];
+        const nextMessages = (data.messages ?? []) as ChatMessage[];
         setMessages(nextMessages);
         const last = nextMessages.at(-1);
         lastMessageAtRef.current = last?.createdAt ?? null;
@@ -168,15 +184,17 @@ export function ChatPanel({
 
     const timer = window.setInterval(pollMessages, 3000);
     return () => window.clearInterval(timer);
-  }, [persistCache]);
+  }, [persistCache, updateMessages]);
 
-  async function sendMessage(e: React.FormEvent) {
+  function sendMessage(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = text.trim();
-    if (!trimmed || sending) return;
+    if (!trimmed) return;
 
     setError("");
-    const tempId = `temp-${Date.now()}`;
+    setText("");
+
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const optimistic: ChatMessage = {
       id: tempId,
       senderId: currentUser.id,
@@ -188,48 +206,69 @@ export function ChatPanel({
       _pending: true,
     };
 
-    setMessages((prev) => {
-      const next = [...prev, optimistic];
-      persistCache(next, membersRef.current);
-      return next;
-    });
-    setText("");
-    setSending(true);
+    updateMessages((prev) => [...prev, optimistic]);
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: trimmed,
+            avatarUrl: currentUser.avatarUrl ?? null,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          updateMessages((prev) => prev.filter((m) => m.id !== tempId));
+          setText(trimmed);
+          setError(data.error || "Gửi tin nhắn thất bại");
+          return;
+        }
+        updateMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? (data.message as ChatMessage) : m))
+        );
+      } catch {
+        updateMessages((prev) => prev.filter((m) => m.id !== tempId));
+        setText(trimmed);
+        setError("Không thể kết nối server");
+      }
+    })();
+  }
+
+  async function recallMessage(messageId: string) {
+    if (messageId.startsWith("temp-")) {
+      updateMessages((prev) => prev.filter((m) => m.id !== messageId));
+      return;
+    }
+
+    const previous = messages.find((m) => m.id === messageId);
+    if (!previous || previous.recalled) return;
+
+    updateMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, recalled: true, text: "" } : m
+      )
+    );
 
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: trimmed }),
-      });
+      const res = await fetch(`/api/chat/${messageId}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) {
-        setMessages((prev) => {
-          const next = prev.filter((m) => m.id !== tempId);
-          persistCache(next, membersRef.current);
-          return next;
-        });
-        setText(trimmed);
-        setError(data.error || "Gửi tin nhắn thất bại");
+        updateMessages((prev) =>
+          prev.map((m) => (m.id === messageId ? previous : m))
+        );
+        setError(data.error || "Không thể thu hồi tin nhắn");
         return;
       }
-      setMessages((prev) => {
-        const next = prev.map((m) => (m.id === tempId ? data.message : m));
-        const last = next.filter((m) => !m._pending).at(-1);
-        lastMessageAtRef.current = last?.createdAt ?? lastMessageAtRef.current;
-        persistCache(next, membersRef.current);
-        return next;
-      });
+      updateMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? (data.message as ChatMessage) : m))
+      );
     } catch {
-      setMessages((prev) => {
-        const next = prev.filter((m) => m.id !== tempId);
-        persistCache(next, membersRef.current);
-        return next;
-      });
-      setText(trimmed);
+      updateMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? previous : m))
+      );
       setError("Không thể kết nối server");
-    } finally {
-      setSending(false);
     }
   }
 
@@ -282,11 +321,26 @@ export function ChatPanel({
                       )}
                     </p>
                   )}
-                  <p className="whitespace-pre-wrap break-words">{msg.text}</p>
-                  <p className={`chat-time ${isMe ? "text-indigo-100" : "text-slate-400"}`}>
-                    {formatTime(msg.createdAt)}
-                    {msg._pending ? " · đang gửi" : ""}
-                  </p>
+                  {msg.recalled ? (
+                    <p className="chat-recalled">Tin nhắn đã được thu hồi</p>
+                  ) : (
+                    <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                  )}
+                  <div className={`chat-footer ${isMe ? "chat-footer-me" : ""}`}>
+                    <p className={`chat-time ${isMe ? "text-indigo-100" : "text-slate-400"}`}>
+                      {formatTime(msg.createdAt)}
+                      {msg._pending ? " · đang gửi" : ""}
+                    </p>
+                    {isMe && !msg._pending && !msg.recalled && (
+                      <button
+                        type="button"
+                        onClick={() => void recallMessage(msg.id)}
+                        className="chat-recall-btn"
+                      >
+                        Thu hồi
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -301,9 +355,8 @@ export function ChatPanel({
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={2000}
-            disabled={sending}
           />
-          <button type="submit" className="btn btn-primary shrink-0" disabled={sending || !text.trim()}>
+          <button type="submit" className="btn btn-primary shrink-0" disabled={!text.trim()}>
             Gửi
           </button>
         </form>

@@ -6,6 +6,7 @@ export type CachedChatMessage = {
   senderAvatarUrl?: string | null;
   text: string;
   createdAt: string;
+  recalled?: boolean;
 };
 
 export type CachedChatMember = {

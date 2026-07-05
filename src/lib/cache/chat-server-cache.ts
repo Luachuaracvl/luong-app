@@ -56,3 +56,23 @@ export function mergeSinceIntoCache(
   }
   setCachedRecentMessages(base.slice(-80));
 }
+
+export function upsertMessagesInCache(incoming: (ChatMessageDoc & { id: string })[]) {
+  if (!incoming.length) return;
+  const cached = getCachedRecentMessages();
+  if (!cached) return;
+  const byId = new Map(cached.map((m) => [m.id, m]));
+  for (const m of incoming) {
+    byId.set(m.id, m);
+  }
+  const next = [...byId.values()].sort(
+    (a, b) => (a.createdAt?.toMillis?.() ?? 0) - (b.createdAt?.toMillis?.() ?? 0)
+  );
+  setCachedRecentMessages(next.slice(-80));
+}
+
+export function removeMessageFromCache(messageId: string) {
+  const cached = getCachedRecentMessages();
+  if (!cached) return;
+  setCachedRecentMessages(cached.filter((m) => m.id !== messageId));
+}

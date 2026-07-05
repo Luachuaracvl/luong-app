@@ -30,6 +30,20 @@ export async function listMessagesSince(since: Date, limit = 50) {
   }));
 }
 
+export async function listMessagesUpdatedSince(since: Date, limit = 50) {
+  const snap = await getDb()
+    .collection(COLLECTION)
+    .where("updatedAt", ">", Timestamp.fromDate(since))
+    .orderBy("updatedAt", "asc")
+    .limit(limit)
+    .get();
+
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as ChatMessageDoc),
+  }));
+}
+
 export async function createMessage(data: {
   senderId: string;
   senderName: string;
@@ -37,23 +51,59 @@ export async function createMessage(data: {
   senderAvatarUrl?: string | null;
   text: string;
 }) {
-  const ref = await getDb()
-    .collection(COLLECTION)
-    .add({
-      senderId: data.senderId,
-      senderName: data.senderName,
-      senderRole: data.senderRole,
-      senderAvatarUrl: data.senderAvatarUrl ?? null,
-      text: data.text,
-      createdAt: FieldValue.serverTimestamp(),
-    });
+  const db = getDb();
+  const ref = db.collection(COLLECTION).doc();
+  const createdAt = Timestamp.now();
 
-  const created = await ref.get();
-  const msg = created.data() as ChatMessageDoc;
+  await ref.set({
+    senderId: data.senderId,
+    senderName: data.senderName,
+    senderRole: data.senderRole,
+    senderAvatarUrl: data.senderAvatarUrl ?? null,
+    text: data.text,
+    recalled: false,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
   return {
-    id: created.id,
+    id: ref.id,
+    senderId: data.senderId,
+    senderName: data.senderName,
+    senderRole: data.senderRole,
+    senderAvatarUrl: data.senderAvatarUrl ?? null,
+    text: data.text,
+    recalled: false,
+    createdAt,
+    updatedAt: createdAt,
+  };
+}
+
+export async function recallMessage(messageId: string, userId: string) {
+  const ref = getDb().collection(COLLECTION).doc(messageId);
+  const doc = await ref.get();
+  if (!doc.exists) return null;
+
+  const data = doc.data() as ChatMessageDoc;
+  if (data.senderId !== userId) {
+    throw new Error("FORBIDDEN");
+  }
+  if (data.recalled) {
+    return { id: doc.id, ...data };
+  }
+
+  await ref.update({
+    recalled: true,
+    text: "",
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  const updated = await ref.get();
+  const msg = updated.data() as ChatMessageDoc;
+  return {
+    id: updated.id,
     ...msg,
-    createdAt: msg.createdAt ?? Timestamp.now(),
+    updatedAt: msg.updatedAt ?? Timestamp.now(),
   };
 }
 
@@ -64,7 +114,9 @@ export function messageToJson(msg: ChatMessageDoc & { id: string }) {
     senderName: msg.senderName,
     senderRole: msg.senderRole,
     senderAvatarUrl: msg.senderAvatarUrl ?? null,
-    text: msg.text,
+    text: msg.recalled ? "" : msg.text,
+    recalled: msg.recalled ?? false,
     createdAt: msg.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+    updatedAt: msg.updatedAt?.toDate?.()?.toISOString() ?? undefined,
   };
 }

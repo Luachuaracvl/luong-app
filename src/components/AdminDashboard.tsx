@@ -15,6 +15,7 @@ import {
   IconSearch,
   IconUsers,
 } from "./Icons";
+import { DayRevenueDetailPanel, type DayRevenueDetail } from "./DayRevenueDetailPanel";
 import { Modal } from "./Modal";
 import { MonthlySummary } from "./MonthlySummary";
 import { MonthFilter, filterByMonth, getMonthOptions } from "./MonthFilter";
@@ -150,6 +151,9 @@ export default function AdminDashboard({ user }: { user: User }) {
     amount: string;
     note: string;
   } | null>(null);
+  const [viewingDay, setViewingDay] = useState<DayStat | null>(null);
+  const [dayDetail, setDayDetail] = useState<DayRevenueDetail | null>(null);
+  const [dayDetailLoading, setDayDetailLoading] = useState(false);
 
   const navItems = [
     { id: "overview", label: "Tổng quan", shortLabel: "Tổng quan", icon: <IconDashboard className="h-5 w-5" /> },
@@ -496,6 +500,35 @@ export default function AdminDashboard({ user }: { user: User }) {
     setError("");
   }
 
+  async function openDayDetail(day: DayStat) {
+    setViewingDay(day);
+    setDayDetail(null);
+    setDayDetailLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch(`/api/admin/revenue/${day.id}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Không thể tải chi tiết ngày");
+        setViewingDay(null);
+        return;
+      }
+      setDayDetail(data.day as DayRevenueDetail);
+    } catch {
+      setError("Không thể kết nối server");
+      setViewingDay(null);
+    } finally {
+      setDayDetailLoading(false);
+    }
+  }
+
+  function closeDayDetail() {
+    setViewingDay(null);
+    setDayDetail(null);
+    setDayDetailLoading(false);
+  }
+
   async function saveEditRevenue(e: React.FormEvent) {
     e.preventDefault();
     if (!editingRevenue) return;
@@ -636,7 +669,10 @@ export default function AdminDashboard({ user }: { user: User }) {
 
   function renderDayStatActions(d: DayStat) {
     return (
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={() => void openDayDetail(d)} className="btn btn-primary px-2 py-1 text-xs">
+          Chi tiết
+        </button>
         <button type="button" onClick={() => startEditRevenue(d)} className="btn btn-secondary px-2 py-1 text-xs">
           Sửa
         </button>
@@ -751,7 +787,15 @@ export default function AdminDashboard({ user }: { user: User }) {
                   {filteredDayStats.map((d) => (
                     <div key={d.id} className="mobile-record-card">
                       <div className="mb-3 flex items-start justify-between gap-2">
-                        <p className="font-semibold">{formatDate(d.date)}</p>
+                        <p className="font-semibold">
+                          <button
+                            type="button"
+                            onClick={() => void openDayDetail(d)}
+                            className="text-left text-indigo-700 hover:underline"
+                          >
+                            {formatDate(d.date)}
+                          </button>
+                        </p>
                         <span className="badge badge-gray">{d.employeeCount} NV</span>
                       </div>
                       <dl>
@@ -784,7 +828,15 @@ export default function AdminDashboard({ user }: { user: User }) {
                           key={d.id}
                           className={(d as { _pending?: boolean })._pending ? "opacity-70" : ""}
                         >
-                          <td className="font-medium">{formatDate(d.date)}</td>
+                          <td className="font-medium">
+                            <button
+                              type="button"
+                              onClick={() => void openDayDetail(d)}
+                              className="text-left font-medium text-indigo-700 hover:underline"
+                            >
+                              {formatDate(d.date)}
+                            </button>
+                          </td>
                           <td>{formatCurrency(d.revenue)}</td>
                           <td className="font-semibold text-emerald-700">{formatCurrency(d.totalSalary)}</td>
                           <td className="font-semibold text-indigo-700">{formatCurrency(d.adminNet)}</td>
@@ -835,7 +887,15 @@ export default function AdminDashboard({ user }: { user: User }) {
                 {dayStats.slice(0, 5).map((d) => (
                   <div key={d.id} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="font-semibold text-slate-800">{formatDate(d.date)}</p>
+                      <p className="font-semibold text-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => void openDayDetail(d)}
+                          className="hover:text-indigo-700 hover:underline"
+                        >
+                          {formatDate(d.date)}
+                        </button>
+                      </p>
                       <p className="text-xs text-slate-500">
                         Lương {formatCurrency(d.totalSalary)} · Admin {formatCurrency(d.adminNet)}
                       </p>
@@ -1025,6 +1085,22 @@ export default function AdminDashboard({ user }: { user: User }) {
               <button type="button" onClick={() => setEditingRevenue(null)} className="btn btn-secondary flex-1">Hủy</button>
             </div>
           </form>
+        )}
+      </Modal>
+
+      <Modal
+        open={!!viewingDay}
+        onClose={closeDayDetail}
+        title={viewingDay ? `Chi tiết ngày ${formatDate(viewingDay.date)}` : "Chi tiết ngày"}
+        description="Xem doanh thu và cách chia % lương cho từng nhân viên"
+      >
+        <DayRevenueDetailPanel detail={dayDetail} loading={dayDetailLoading} />
+        {!dayDetailLoading && (
+          <div className="flex justify-end pt-2">
+            <button type="button" onClick={closeDayDetail} className="btn btn-secondary">
+              Đóng
+            </button>
+          </div>
         )}
       </Modal>
 
