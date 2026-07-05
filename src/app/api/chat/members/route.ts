@@ -5,16 +5,7 @@ import { findAllUsersForChat } from "@/lib/db/users";
 export async function GET() {
   try {
     await requireSession();
-    const users = await findAllUsersForChat();
-
-    const members = users.map((u) => ({
-      id: u.id,
-      name: u.name,
-      role: u.role,
-      avatarUrl: u.avatarUrl ?? null,
-      isActive: u.isActive,
-    }));
-
+    const members = await findAllUsersForChat();
     return NextResponse.json({ members });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {

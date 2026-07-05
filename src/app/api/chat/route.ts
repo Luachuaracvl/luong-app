@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
-import { findUserById } from "@/lib/db/users";
+import { findUserById, findAllUsersForChat } from "@/lib/db/users";
 import {
   createMessage,
   listMessagesSince,
@@ -23,8 +23,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ messages: messages.map(messageToJson) });
     }
 
-    const messages = await listRecentMessages(80);
-    return NextResponse.json({ messages: messages.map(messageToJson) });
+    const [messages, members] = await Promise.all([
+      listRecentMessages(50),
+      findAllUsersForChat(),
+    ]);
+    return NextResponse.json({
+      messages: messages.map(messageToJson),
+      members,
+    });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
@@ -55,7 +61,6 @@ export async function POST(request: Request) {
       senderId: session.id,
       senderName: user.name,
       senderRole: user.role,
-      senderAvatarUrl: user.avatarUrl ?? null,
       text,
     });
 

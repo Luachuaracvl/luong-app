@@ -34,10 +34,27 @@ export async function findEmployees() {
     .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
 }
 
-export async function findAllUsersForChat() {
+export type ChatMemberSummary = {
+  id: string;
+  name: string;
+  role: Role;
+  avatarUrl: string | null;
+  isActive: boolean;
+};
+
+export async function findAllUsersForChat(): Promise<ChatMemberSummary[]> {
   const snap = await getDb().collection(COLLECTION).get();
   return snap.docs
-    .map((doc) => ({ id: doc.id, ...(doc.data() as UserDoc) }))
+    .map((doc) => {
+      const data = doc.data() as UserDoc;
+      return {
+        id: doc.id,
+        name: data.name,
+        role: data.role,
+        avatarUrl: data.avatarUrl ?? null,
+        isActive: data.isActive,
+      };
+    })
     .sort((a, b) => {
       if (a.role !== b.role) return a.role === "ADMIN" ? -1 : 1;
       return a.name.localeCompare(b.name, "vi");
