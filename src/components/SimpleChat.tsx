@@ -384,9 +384,9 @@ export function SimpleChat({
           <div ref={bottomRef} />
         </div>
 
-        {error && <p className="chat-error">{error}</p>}
-
-        <form onSubmit={(e) => void sendMessage(e)} className="chat-input-bar">
+        <div className="chat-footer">
+          {error && <p className="chat-error">{error}</p>}
+          <form onSubmit={(e) => void sendMessage(e)} className="chat-input-bar">
           <textarea
             ref={inputRef}
             className="chat-input"
@@ -412,6 +412,7 @@ export function SimpleChat({
             <IconSend className="h-5 w-5" />
           </button>
         </form>
+        </div>
       </div>
     </div>
   );
