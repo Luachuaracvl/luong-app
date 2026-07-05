@@ -51,6 +51,7 @@ export async function createUser(data: {
       role: data.role,
       salaryPercentage: data.salaryPercentage,
       isActive: true,
+      totalSalary: 0,
       avatarUrl: null,
       createdAt: now,
       updatedAt: now,
@@ -110,6 +111,7 @@ export function userToJson(user: UserDoc & { id: string }) {
     role: user.role,
     salaryPercentage: user.salaryPercentage,
     isActive: user.isActive,
+    totalSalary: user.totalSalary ?? 0,
     avatarUrl: user.avatarUrl ?? null,
     createdAt: user.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
   };

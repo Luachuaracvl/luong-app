@@ -9,6 +9,7 @@ export type UserDoc = {
   role: Role;
   salaryPercentage: number;
   isActive: boolean;
+  totalSalary?: number;
   avatarUrl?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -19,8 +20,16 @@ export type DailyRevenueDoc = {
   date: Timestamp;
   amount: number;
   note: string | null;
+  totalSalary?: number;
+  employeeCount?: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+};
+
+export type SystemStatsDoc = {
+  totalRevenue: number;
+  totalSalary: number;
+  revenueDays: number;
 };
 
 export type SalaryRecordDoc = {

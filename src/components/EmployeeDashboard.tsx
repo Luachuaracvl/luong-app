@@ -1,12 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AppHeader } from "./AppHeader";
-import { ProfilePanel } from "./ProfilePanel";
+import { useEffect, useMemo, useState } from "react";
+import { AlertBanner } from "./AlertBanner";
+import { DashboardShell } from "./DashboardShell";
+import { EmptyState } from "./EmptyState";
+import { IconDownload, IconProfile, IconSalary } from "./Icons";
 import { MonthFilter, filterByMonth, getMonthOptions } from "./MonthFilter";
+import { ProfilePanel } from "./ProfilePanel";
 import { SalaryTable } from "./SalaryTable";
+import { SectionHeader } from "./SectionHeader";
 import { StatCard } from "./StatCard";
-import { downloadCsv, formatCurrency, formatDate } from "@/lib/utils";
+import {
+  computeEmployeeMonthlySummary,
+  downloadCsv,
+  formatCurrency,
+  formatDate,
+  formatMonthLabel,
+  getGreeting,
+} from "@/lib/utils";
 
 type User = {
   id: string;
@@ -38,6 +49,7 @@ export default function EmployeeDashboard({ user }: { user: User }) {
   const [monthFilter, setMonthFilter] = useState("all");
   const [profileUser, setProfileUser] = useState<User>(user);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/employee/salary")
@@ -48,7 +60,8 @@ export default function EmployeeDashboard({ user }: { user: User }) {
         }
         setData(await res.json());
       })
-      .catch(() => setError("Không thể kết nối server"));
+      .catch(() => setError("Không thể kết nối server"))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -72,9 +85,13 @@ export default function EmployeeDashboard({ user }: { user: User }) {
     (r) => new Date(r.date).toISOString().slice(0, 10) === todayStr
   );
 
-  const filteredRecords = data
-    ? filterByMonth(data.records, monthFilter)
-    : [];
+  const filteredRecords = data ? filterByMonth(data.records, monthFilter) : [];
+  const monthlySummary = useMemo(
+    () => (data ? computeEmployeeMonthlySummary(data.records) : []),
+    [data]
+  );
+
+  const filteredMonthSalary = filteredRecords.reduce((s, r) => s + r.salary, 0);
 
   function exportMySalaryCsv() {
     if (!data) return;
@@ -88,91 +105,124 @@ export default function EmployeeDashboard({ user }: { user: User }) {
     ]);
   }
 
+  const navItems = [
+    { id: "salary", label: "Lương của tôi", shortLabel: "Lương", icon: <IconSalary className="h-5 w-5" /> },
+    { id: "profile", label: "Hồ sơ", shortLabel: "Hồ sơ", icon: <IconProfile className="h-5 w-5" /> },
+  ];
+
   return (
-    <div className="min-h-screen">
-      <AppHeader
-        user={profileUser}
-        onOpenProfile={() => setTab("profile")}
-      />
+    <DashboardShell
+      user={profileUser}
+      navItems={navItems}
+      activeTab={tab}
+      onTabChange={(id) => setTab(id as Tab)}
+      pageTitle={tab === "salary" ? getGreeting(profileUser.name) : "Hồ sơ cá nhân"}
+      pageSubtitle={
+        tab === "salary"
+          ? "Theo dõi lương hàng ngày và lịch sử chi trả"
+          : "Cập nhật thông tin và mật khẩu"
+      }
+    >
+      <AlertBanner type="error" message={error} onDismiss={() => setError("")} />
 
-      <main className="mx-auto max-w-4xl px-4 py-4 sm:py-8">
-        <div className="tab-bar mb-4 sm:mb-6">
-          <button
-            onClick={() => setTab("salary")}
-            className={`btn whitespace-nowrap ${tab === "salary" ? "btn-primary" : "btn-secondary"}`}
-          >
-            Lương của tôi
-          </button>
-          <button
-            onClick={() => setTab("profile")}
-            className={`btn whitespace-nowrap ${tab === "profile" ? "btn-primary" : "btn-secondary"}`}
-          >
-            Hồ sơ
-          </button>
+      {tab === "profile" && (
+        <ProfilePanel
+          user={{
+            id: profileUser.id,
+            username: profileUser.username ?? data?.employee.username ?? "",
+            name: profileUser.name,
+            role: profileUser.role,
+            avatarUrl: profileUser.avatarUrl,
+          }}
+          onUpdated={(p) =>
+            setProfileUser((prev) => ({
+              ...prev,
+              name: p.name,
+              avatarUrl: p.avatarUrl,
+            }))
+          }
+        />
+      )}
+
+      {tab === "salary" && loading && (
+        <div className="space-y-4">
+          <div className="skeleton h-36 w-full rounded-2xl" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="skeleton h-24 rounded-2xl" />
+            <div className="skeleton h-24 rounded-2xl" />
+          </div>
         </div>
+      )}
 
-        {error && (
-          <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
-          </p>
-        )}
-
-        {tab === "profile" && (
-          <ProfilePanel
-            user={{
-              id: profileUser.id,
-              username: profileUser.username ?? data?.employee.username ?? "",
-              name: profileUser.name,
-              role: profileUser.role,
-              avatarUrl: profileUser.avatarUrl,
-            }}
-            onUpdated={(p) =>
-              setProfileUser((prev) => ({
-                ...prev,
-                name: p.name,
-                avatarUrl: p.avatarUrl,
-              }))
-            }
-          />
-        )}
-
-        {tab === "salary" && data && (
-          <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <StatCard label="Tổng lương" value={data.totalSalary} />
-              <StatCard
-                label="Lương hôm nay"
-                format={todaySalary ? "currency" : "text"}
-                value={
-                  todaySalary ? todaySalary.salary : "Chưa có dữ liệu"
-                }
-                hint={
-                  todaySalary
-                    ? `${todaySalary.percentageUsed}% doanh thu ${formatCurrency(todaySalary.revenue)}`
-                    : "Admin chưa cập nhật doanh thu hôm nay"
-                }
-              />
+      {tab === "salary" && data && !loading && (
+        <div className="space-y-6">
+          {todaySalary ? (
+            <div className="hero-stat hero-stat-emerald text-white">
+              <p className="text-sm font-medium text-emerald-100">
+                Lương hôm nay · {formatDate(todaySalary.date)}
+              </p>
+              <p className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+                {formatCurrency(todaySalary.salary)}
+              </p>
+              <p className="mt-2 text-sm text-emerald-100/90">
+                {todaySalary.percentageUsed}% doanh thu {formatCurrency(todaySalary.revenue)}
+              </p>
             </div>
+          ) : (
+            <div className="card border-amber-100 bg-amber-50/80">
+              <p className="font-semibold text-amber-900">Chưa có lương hôm nay</p>
+              <p className="mt-1 text-sm text-amber-700">
+                Admin chưa cập nhật doanh thu cho ngày hôm nay. Vui lòng quay lại sau.
+              </p>
+            </div>
+          )}
 
-            {todaySalary && (
-              <div className="card border-emerald-200 bg-emerald-50">
-                <h2 className="text-sm font-semibold text-emerald-800 sm:text-base">
-                  Lương ngày {formatDate(todaySalary.date)}
-                </h2>
-                <p className="mt-2 text-2xl font-bold text-emerald-700 sm:text-3xl">
-                  {formatCurrency(todaySalary.salary)}
-                </p>
-                <p className="mt-1 text-xs text-emerald-600 sm:text-sm">
-                  Doanh thu: {formatCurrency(todaySalary.revenue)} ·{" "}
-                  {todaySalary.percentageUsed}% lương
-                </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <StatCard label="Tổng lương" value={data.totalSalary} icon="salary" accent="emerald" />
+            <StatCard
+              label={monthFilter === "all" ? "Số ngày đã tính" : "Lương tháng đã lọc"}
+              value={monthFilter === "all" ? data.records.length : filteredMonthSalary}
+              format={monthFilter === "all" ? "number" : "currency"}
+              icon="chart"
+              accent="indigo"
+            />
+            <StatCard
+              label="Lương hôm nay"
+              format={todaySalary ? "currency" : "text"}
+              value={todaySalary ? todaySalary.salary : "—"}
+              hint={todaySalary ? `${todaySalary.percentageUsed}% doanh thu` : "Chưa có dữ liệu"}
+              icon="revenue"
+              accent="amber"
+            />
+          </div>
+
+          {monthlySummary.length > 0 && (
+            <div className="card">
+              <SectionHeader title="Tổng hợp theo tháng" description="Lương đã nhận mỗi tháng" />
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {monthlySummary.slice(0, 6).map((row) => (
+                  <div
+                    key={row.month}
+                    className="rounded-xl border border-slate-100 bg-gradient-to-br from-white to-emerald-50/30 p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-slate-800">{formatMonthLabel(row.month)}</p>
+                      <span className="badge badge-green">{row.days} ngày</span>
+                    </div>
+                    <p className="mt-2 text-xl font-bold text-emerald-700">
+                      {formatCurrency(row.salary)}
+                    </p>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
-            <div>
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                <h2 className="text-base font-semibold sm:text-lg">Lịch sử lương</h2>
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div>
+            <SectionHeader
+              title="Lịch sử lương"
+              action={
+                <>
                   <MonthFilter
                     value={monthFilter}
                     onChange={setMonthFilter}
@@ -184,19 +234,20 @@ export default function EmployeeDashboard({ user }: { user: User }) {
                     className="btn btn-secondary w-full sm:w-auto"
                     disabled={filteredRecords.length === 0}
                   >
+                    <IconDownload className="h-4 w-4" />
                     Xuất CSV
                   </button>
-                </div>
-              </div>
+                </>
+              }
+            />
+            {filteredRecords.length === 0 ? (
+              <EmptyState title="Không có dữ liệu" description="Thử chọn tháng khác hoặc chờ admin cập nhật doanh thu" />
+            ) : (
               <SalaryTable records={filteredRecords} showRevenue={false} />
-            </div>
+            )}
           </div>
-        )}
-
-        {tab === "salary" && !data && !error && (
-          <div className="card text-center text-slate-500">Đang tải...</div>
-        )}
-      </main>
-    </div>
+        </div>
+      )}
+    </DashboardShell>
   );
 }

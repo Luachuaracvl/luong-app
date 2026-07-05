@@ -1,41 +1,81 @@
 import { findEmployees } from "@/lib/db/users";
 import {
-  createSalaryRecord,
-  findSalaryRecord,
-  findSalaryRecordsByUser,
-  findSalaryRecordsByRevenue,
-  getAllSalaryRecords,
-  updateSalaryRecord,
+  batchAdjustUserSalaryTotals,
+  batchCreateSalaryRecordsWithUserTotals,
+  batchUpdateSalaryRecords,
   deleteSalariesByRevenue,
+  findSalaryRecordsByRevenue,
+  findSalaryRecordsByUser,
+  getAllSalaryRecords,
+  getSalaryRecordsForRevenueIds,
 } from "@/lib/db/salaries";
 import {
   deleteRevenue,
   findRevenueById,
   listRevenues,
+  updateRevenueTotals,
   upsertRevenue,
 } from "@/lib/db/revenues";
-import {
-  groupSalariesByRevenue,
-  groupSalariesByUser,
-  sumSalary,
-} from "@/lib/db/salary-aggregates";
-import { findPercentageHistoryByUser } from "@/lib/db/percentage-history";
-import { findUserById } from "@/lib/db/users";
+import { groupSalariesByRevenue, groupSalariesByUser, sumSalary } from "@/lib/db/salary-aggregates";
+import { findPercentageHistoryForUsers } from "@/lib/db/percentage-history";
+import { adjustGlobalStats, getGlobalStats, setGlobalStats } from "@/lib/db/stats";
 import { calculateSalary, parseDateInput, toDateOnly } from "./utils";
 
-export async function getPercentageForDate(
+type HistoryList = Awaited<
+  ReturnType<typeof findPercentageHistoryForUsers>
+> extends Map<string, infer T>
+  ? T
+  : never;
+
+function resolvePercentage(
   userId: string,
+  fallbackPercentage: number,
   date: Date,
-  historyCache?: Map<string, Awaited<ReturnType<typeof findPercentageHistoryByUser>>>
+  historyMap: Map<string, HistoryList>
 ) {
   const target = toDateOnly(date).getTime();
-  const history =
-    historyCache?.get(userId) ?? (await findPercentageHistoryByUser(userId));
+  const history = historyMap.get(userId) ?? [];
   const match = history.find((h) => h.effectiveFrom.toMillis() <= target);
-  if (match) return match.percentage;
+  return match?.percentage ?? fallbackPercentage;
+}
 
-  const user = await findUserById(userId);
-  return user?.salaryPercentage ?? 0;
+async function ensureGlobalStats() {
+  const stats = await getGlobalStats();
+  if (stats.revenueDays > 0 || stats.totalRevenue > 0 || stats.totalSalary > 0) {
+    return stats;
+  }
+
+  const [revenues, salaries] = await Promise.all([
+    listRevenues(500),
+    getAllSalaryRecords(),
+  ]);
+
+  const computed = {
+    totalRevenue: revenues.reduce((sum, r) => sum + r.amount, 0),
+    totalSalary: sumSalary(salaries),
+    revenueDays: revenues.length,
+  };
+
+  if (computed.revenueDays > 0 || computed.totalSalary > 0) {
+    await setGlobalStats(computed);
+  }
+
+  return computed;
+}
+
+async function ensureEmployeeTotals(
+  employees: Awaited<ReturnType<typeof findEmployees>>
+) {
+  const missing = employees.filter((e) => e.totalSalary === undefined);
+  if (missing.length === 0) return employees;
+
+  const allSalaries = await getAllSalaryRecords();
+  const byUser = groupSalariesByUser(allSalaries);
+
+  return employees.map((e) => ({
+    ...e,
+    totalSalary: e.totalSalary ?? sumSalary(byUser.get(e.id) ?? []),
+  }));
 }
 
 export async function createSalaryRecordsForRevenue(
@@ -44,63 +84,116 @@ export async function createSalaryRecordsForRevenue(
   date: Date,
   amount: number
 ) {
-  const employees = await findEmployees();
+  const [employees, existingSalaries] = await Promise.all([
+    findEmployees(),
+    findSalaryRecordsByRevenue(dailyRevenueId),
+  ]);
+
   const activeEmployees = employees.filter((e) => e.isActive);
-  const historyCache = new Map<
-    string,
-    Awaited<ReturnType<typeof findPercentageHistoryByUser>>
-  >();
+  const existingUserIds = new Set(existingSalaries.map((s) => s.userId));
+  const toCreate = activeEmployees.filter((e) => !existingUserIds.has(e.id));
 
-  await Promise.all(
-    activeEmployees.map(async (employee) => {
-      const existing = await findSalaryRecord(employee.id, dailyRevenueId);
-      if (existing) return;
-
-      if (!historyCache.has(employee.id)) {
-        historyCache.set(
-          employee.id,
-          await findPercentageHistoryByUser(employee.id)
-        );
-      }
-
-      const percentage = await getPercentageForDate(
-        employee.id,
-        date,
-        historyCache
-      );
-      const salaryAmount = calculateSalary(amount, percentage);
-
-      await createSalaryRecord({
-        userId: employee.id,
-        dailyRevenueId,
-        dateKey,
-        percentageUsed: percentage,
-        salaryAmount,
-        revenueAmount: amount,
-      });
-    })
+  const historyMap = await findPercentageHistoryForUsers(
+    toCreate.map((e) => e.id)
   );
+
+  const newRecords = toCreate.map((employee) => {
+    const percentageUsed = resolvePercentage(
+      employee.id,
+      employee.salaryPercentage,
+      date,
+      historyMap
+    );
+    return {
+      userId: employee.id,
+      dailyRevenueId,
+      dateKey,
+      percentageUsed,
+      salaryAmount: calculateSalary(amount, percentageUsed),
+      revenueAmount: amount,
+    };
+  });
+
+  await batchCreateSalaryRecordsWithUserTotals(newRecords);
+
+  const newSalaryTotal = newRecords.reduce((sum, r) => sum + r.salaryAmount, 0);
+  const totalSalary = sumSalary(existingSalaries) + newSalaryTotal;
+  const employeeCount = existingSalaries.length + newRecords.length;
+
+  await Promise.all([
+    updateRevenueTotals(dailyRevenueId, totalSalary, employeeCount),
+    newSalaryTotal > 0
+      ? adjustGlobalStats({ totalSalary: newSalaryTotal })
+      : Promise.resolve(),
+  ]);
+
+  return { totalSalary, employeeCount, created: newRecords.length };
 }
 
-export async function recalculateSalariesForRevenue(
+async function recalculateSalariesForRevenue(
   dailyRevenueId: string,
   dateKey: string,
   date: Date,
   amount: number
 ) {
-  const existingSalaries = await findSalaryRecordsByRevenue(dailyRevenueId);
+  const [existingSalaries, employees] = await Promise.all([
+    findSalaryRecordsByRevenue(dailyRevenueId),
+    findEmployees(),
+  ]);
 
-  await Promise.all(
-    existingSalaries.map((record) => {
-      const salaryAmount = calculateSalary(amount, record.percentageUsed);
-      return updateSalaryRecord(record.id, {
-        salaryAmount,
-        revenueAmount: amount,
-      });
-    })
-  );
+  const updates = existingSalaries.map((record) => ({
+    id: record.id,
+    salaryAmount: calculateSalary(amount, record.percentageUsed),
+    revenueAmount: amount,
+  }));
 
-  await createSalaryRecordsForRevenue(dailyRevenueId, dateKey, date, amount);
+  const userDeltas = existingSalaries.map((record) => {
+    const updated = updates.find((u) => u.id === record.id)!;
+    return { userId: record.userId, delta: updated.salaryAmount - record.salaryAmount };
+  });
+
+  const oldTotal = sumSalary(existingSalaries);
+
+  const activeEmployees = employees.filter((e) => e.isActive);
+  const existingUserIds = new Set(existingSalaries.map((s) => s.userId));
+  const toCreate = activeEmployees.filter((e) => !existingUserIds.has(e.id));
+  const historyMap = await findPercentageHistoryForUsers(toCreate.map((e) => e.id));
+
+  const newRecords = toCreate.map((employee) => {
+    const percentageUsed = resolvePercentage(
+      employee.id,
+      employee.salaryPercentage,
+      date,
+      historyMap
+    );
+    return {
+      userId: employee.id,
+      dailyRevenueId,
+      dateKey,
+      percentageUsed,
+      salaryAmount: calculateSalary(amount, percentageUsed),
+      revenueAmount: amount,
+    };
+  });
+
+  await Promise.all([
+    batchUpdateSalaryRecords(updates),
+    batchAdjustUserSalaryTotals(userDeltas),
+    batchCreateSalaryRecordsWithUserTotals(newRecords),
+  ]);
+
+  const newTotal =
+    updates.reduce((sum, u) => sum + u.salaryAmount, 0) +
+    newRecords.reduce((sum, r) => sum + r.salaryAmount, 0);
+  const employeeCount = existingSalaries.length + newRecords.length;
+  const salaryDelta = newTotal - oldTotal;
+
+  await Promise.all([
+    updateRevenueTotals(dailyRevenueId, newTotal, employeeCount),
+    salaryDelta !== 0 ? adjustGlobalStats({ totalSalary: salaryDelta }) : Promise.resolve(),
+  ]);
+
+  return { totalSalary: newTotal, employeeCount };
 }
 
 export async function updateRevenueWithSalaries(
@@ -111,9 +204,15 @@ export async function updateRevenueWithSalaries(
   const revenue = await findRevenueById(id);
   if (!revenue) throw new Error("NOT_FOUND");
 
+  const revenueDelta = amount - revenue.amount;
   const date = revenue.date.toDate();
+
   await upsertRevenue(date, amount, note);
   await recalculateSalariesForRevenue(id, revenue.dateKey, date, amount);
+
+  if (revenueDelta !== 0) {
+    await adjustGlobalStats({ totalRevenue: revenueDelta });
+  }
 
   return findRevenueById(id);
 }
@@ -122,8 +221,17 @@ export async function deleteRevenueWithSalaries(id: string) {
   const revenue = await findRevenueById(id);
   if (!revenue) throw new Error("NOT_FOUND");
 
-  await deleteSalariesByRevenue(id);
-  await deleteRevenue(id);
+  const salaries = await deleteSalariesByRevenue(id);
+  const salaryTotal = sumSalary(salaries);
+
+  await Promise.all([
+    deleteRevenue(id),
+    adjustGlobalStats({
+      totalRevenue: -revenue.amount,
+      totalSalary: -salaryTotal,
+      revenueDays: -1,
+    }),
+  ]);
 }
 
 function dateKeyToIso(dateKey: string) {
@@ -133,19 +241,12 @@ function dateKeyToIso(dateKey: string) {
 
 export async function getEmployeeSalarySummary(userId: string) {
   const records = await findSalaryRecordsByUser(userId);
-  const missingRevenue = records.some((r) => r.revenueAmount === undefined);
-
-  let revenueMap = new Map<string, number>();
-  if (missingRevenue) {
-    const revenues = await listRevenues(500);
-    revenueMap = new Map(revenues.map((r) => [r.id, r.amount]));
-  }
 
   const enriched = records
     .map((r) => ({
       id: r.id,
       date: dateKeyToIso(r.dateKey),
-      revenue: r.revenueAmount ?? revenueMap.get(r.dailyRevenueId) ?? 0,
+      revenue: r.revenueAmount ?? 0,
       percentageUsed: r.percentageUsed,
       salary: r.salaryAmount,
     }))
@@ -158,97 +259,135 @@ export async function getEmployeeSalarySummary(userId: string) {
 }
 
 export async function getDailyStats(limit = 30) {
-  const [revenues, allSalaries] = await Promise.all([
-    listRevenues(limit),
-    getAllSalaryRecords(),
-  ]);
-  const byRevenue = groupSalariesByRevenue(allSalaries);
+  const revenues = await listRevenues(limit);
+  const missingIds = revenues
+    .filter((r) => r.totalSalary === undefined)
+    .map((r) => r.id);
+
+  const byRevenue =
+    missingIds.length > 0
+      ? groupSalariesByRevenue(await getSalaryRecordsForRevenueIds(missingIds))
+      : new Map();
 
   return revenues.map((rev) => {
-    const salaries = byRevenue.get(rev.id) ?? [];
-    const totalSalary = sumSalary(salaries);
+    const salaries = byRevenue.get(rev.id);
+    const totalSalary = rev.totalSalary ?? (salaries ? sumSalary(salaries) : 0);
     return {
       id: rev.id,
       date: rev.date.toDate().toISOString(),
       revenue: rev.amount,
       totalSalary,
       adminNet: rev.amount - totalSalary,
-      employeeCount: salaries.length,
+      employeeCount: rev.employeeCount ?? salaries?.length ?? 0,
     };
   });
 }
 
 export async function getOverviewStats() {
-  const [revenues, allSalaries, employees] = await Promise.all([
-    listRevenues(500),
-    getAllSalaryRecords(),
+  const [globalStats, employees] = await Promise.all([
+    ensureGlobalStats(),
     findEmployees(),
   ]);
 
   return {
-    totalRevenue: revenues.reduce((sum, r) => sum + r.amount, 0),
-    totalSalary: sumSalary(allSalaries),
+    totalRevenue: globalStats.totalRevenue,
+    totalSalary: globalStats.totalSalary,
     employeeCount: employees.filter((e) => e.isActive).length,
-    revenueDays: revenues.length,
+    revenueDays: globalStats.revenueDays,
   };
 }
 
 export async function getAdminDashboardData() {
-  const [revenues, allSalaries, employees] = await Promise.all([
+  const [revenues, employeesRaw, globalStats] = await Promise.all([
     listRevenues(60),
-    getAllSalaryRecords(),
     findEmployees(),
+    ensureGlobalStats(),
   ]);
 
-  const byRevenue = groupSalariesByRevenue(allSalaries);
-  const byUser = groupSalariesByUser(allSalaries);
+  const employees = await ensureEmployeeTotals(employeesRaw);
+
+  const missingRevenueIds = revenues
+    .filter((r) => r.totalSalary === undefined)
+    .map((r) => r.id);
+  const salaryByRevenue =
+    missingRevenueIds.length > 0
+      ? groupSalariesByRevenue(await getSalaryRecordsForRevenueIds(missingRevenueIds))
+      : new Map();
 
   const stats = revenues.map((rev) => {
-    const salaries = byRevenue.get(rev.id) ?? [];
-    const totalSalary = sumSalary(salaries);
+    const salaries = salaryByRevenue.get(rev.id);
+    const totalSalary = rev.totalSalary ?? (salaries ? sumSalary(salaries) : 0);
     return {
       id: rev.id,
       date: rev.date.toDate().toISOString(),
       revenue: rev.amount,
       totalSalary,
       adminNet: rev.amount - totalSalary,
-      employeeCount: salaries.length,
+      employeeCount: rev.employeeCount ?? salaries?.length ?? 0,
       note: rev.note,
     };
   });
 
-  const totalRevenue = revenues.reduce((sum, r) => sum + r.amount, 0);
-  const totalSalary = sumSalary(allSalaries);
-
   const overview = {
-    totalRevenue,
-    totalSalary,
-    adminNetIncome: totalRevenue - totalSalary,
+    totalRevenue: globalStats.totalRevenue,
+    totalSalary: globalStats.totalSalary,
+    adminNetIncome: globalStats.totalRevenue - globalStats.totalSalary,
     employeeCount: employees.filter((e) => e.isActive).length,
-    revenueDays: revenues.length,
+    revenueDays: globalStats.revenueDays,
   };
 
   const employeeList = employees
-    .map((e) => {
-      const records = byUser.get(e.id) ?? [];
-      return {
-        id: e.id,
-        username: e.username,
-        name: e.name,
-        salaryPercentage: e.salaryPercentage,
-        isActive: e.isActive,
-        totalSalary: sumSalary(records),
-        recordCount: records.length,
-        createdAt: e.createdAt?.toDate?.()?.toISOString() ?? null,
-      };
-    })
+    .map((e) => ({
+      id: e.id,
+      username: e.username,
+      name: e.name,
+      salaryPercentage: e.salaryPercentage,
+      isActive: e.isActive,
+      totalSalary: e.totalSalary ?? 0,
+      recordCount: 0,
+      createdAt: e.createdAt?.toDate?.()?.toISOString() ?? null,
+    }))
     .sort(
       (a, b) =>
-        new Date(b.createdAt ?? 0).getTime() -
-        new Date(a.createdAt ?? 0).getTime()
+        new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
     );
 
   return { overview, stats, employees: employeeList };
+}
+
+export async function recordNewRevenueDay(
+  date: Date,
+  amount: number,
+  note: string | null
+) {
+  const result = await upsertRevenue(date, amount, note);
+
+  if (result.isNew) {
+    await adjustGlobalStats({ totalRevenue: amount, revenueDays: 1 });
+  } else if (result.previousAmount !== amount) {
+    await adjustGlobalStats({ totalRevenue: amount - result.previousAmount });
+  }
+
+  const salaryResult = await createSalaryRecordsForRevenue(
+    result.id,
+    result.dateKey,
+    date,
+    amount
+  );
+
+  return { revenue: result, ...salaryResult };
+}
+
+export async function updateRevenueAmountOnly(
+  date: Date,
+  amount: number,
+  note: string | null
+) {
+  const result = await upsertRevenue(date, amount, note);
+  if (!result.isNew && result.previousAmount !== amount) {
+    await adjustGlobalStats({ totalRevenue: amount - result.previousAmount });
+  }
+  return result;
 }
 
 export { parseDateInput, toDateOnly };

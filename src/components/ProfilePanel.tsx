@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { AlertBanner } from "./AlertBanner";
 import { UserAvatar } from "./UserAvatar";
 
 type ProfileUser = {
@@ -58,22 +59,40 @@ export function ProfilePanel({
     e.preventDefault();
     setMessage("");
     setError("");
+
+    const trimmedName = name.trim();
+    const prevProfile = profile;
+    const prevName = profile.name;
+
+    setProfile((p) => ({ ...p, name: trimmedName }));
+    onUpdated?.({ ...profile, name: trimmedName });
+    setMessage("Đã cập nhật hồ sơ");
+
     setLoading(true);
 
     try {
-      const body: Record<string, string> = { name: name.trim() };
+      const body: Record<string, string> = { name: trimmedName };
 
       if (newPassword || currentPassword || confirmPassword) {
         if (!currentPassword || !newPassword) {
+          setProfile(prevProfile);
+          onUpdated?.(prevProfile);
           setError("Nhập mật khẩu hiện tại và mật khẩu mới");
+          setMessage("");
           return;
         }
         if (newPassword.length < 6) {
+          setProfile(prevProfile);
+          onUpdated?.(prevProfile);
           setError("Mật khẩu mới phải có ít nhất 6 ký tự");
+          setMessage("");
           return;
         }
         if (newPassword !== confirmPassword) {
+          setProfile(prevProfile);
+          onUpdated?.(prevProfile);
           setError("Mật khẩu mới không khớp");
+          setMessage("");
           return;
         }
         body.currentPassword = currentPassword;
@@ -87,7 +106,11 @@ export function ProfilePanel({
       });
       const data = await res.json();
       if (!res.ok) {
+        setProfile(prevProfile);
+        onUpdated?.(prevProfile);
+        setName(prevName);
         setError(data.error || "Cập nhật thất bại");
+        setMessage("");
         return;
       }
 
@@ -96,9 +119,12 @@ export function ProfilePanel({
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setMessage("Đã cập nhật hồ sơ");
     } catch {
+      setProfile(prevProfile);
+      onUpdated?.(prevProfile);
+      setName(prevName);
       setError("Không thể kết nối server");
+      setMessage("");
     } finally {
       setLoading(false);
     }
@@ -119,8 +145,15 @@ export function ProfilePanel({
     setError("");
     setLoading(true);
 
+    const prevProfile = profile;
+    setMessage("Đang cập nhật avatar...");
+
     try {
       const avatarUrl = await compressImage(file);
+      setProfile((p) => ({ ...p, avatarUrl }));
+      onUpdated?.({ ...profile, avatarUrl });
+      setMessage("Đã cập nhật avatar");
+
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -128,14 +161,19 @@ export function ProfilePanel({
       });
       const data = await res.json();
       if (!res.ok) {
+        setProfile(prevProfile);
+        onUpdated?.(prevProfile);
         setError(data.error || "Không thể cập nhật avatar");
+        setMessage("");
         return;
       }
       setProfile(data.user);
       onUpdated?.(data.user);
-      setMessage("Đã cập nhật avatar");
     } catch {
+      setProfile(prevProfile);
+      onUpdated?.(prevProfile);
       setError("Không thể xử lý ảnh");
+      setMessage("");
     } finally {
       setLoading(false);
     }
@@ -164,15 +202,22 @@ export function ProfilePanel({
   }
 
   return (
-    <div className="card space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold">Hồ sơ cá nhân</h2>
-        <p className="text-sm text-slate-500">@{profile.username}</p>
-      </div>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="card overflow-hidden p-0">
+        <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-8 text-white">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end">
+            <UserAvatar name={profile.name} avatarUrl={profile.avatarUrl} size="lg" />
+            <div className="text-center sm:text-left">
+              <h2 className="text-xl font-bold">{profile.name}</h2>
+              <p className="text-indigo-100">@{profile.username}</p>
+              <span className="badge badge-blue mt-2 bg-white/20 text-white">
+                {profile.role === "ADMIN" ? "Quản trị viên" : "Nhân viên"}
+              </span>
+            </div>
+          </div>
+        </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
-        <UserAvatar name={profile.name} avatarUrl={profile.avatarUrl} size="lg" />
-        <div className="flex flex-wrap gap-2">
+        <div className="space-y-4 p-4 sm:p-6">
           <input
             ref={fileRef}
             type="file"
@@ -180,85 +225,59 @@ export function ProfilePanel({
             className="hidden"
             onChange={(e) => handleAvatarChange(e.target.files?.[0] ?? null)}
           />
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => fileRef.current?.click()}
-            className="btn btn-secondary flex-1 sm:flex-none"
-          >
-            Đổi avatar
-          </button>
-          {profile.avatarUrl && (
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               disabled={loading}
-              onClick={removeAvatar}
-              className="btn btn-secondary flex-1 sm:flex-none"
+              onClick={() => fileRef.current?.click()}
+              className="btn btn-primary flex-1 sm:flex-none"
             >
-              Xóa avatar
+              Đổi avatar
             </button>
-          )}
+            {profile.avatarUrl && (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={removeAvatar}
+                className="btn btn-secondary flex-1 sm:flex-none"
+              >
+                Xóa avatar
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-slate-400">JPG, PNG — tự nén trước khi lưu (tối đa 5MB)</p>
         </div>
-        <p className="w-full text-xs text-slate-400 sm:w-auto">
-          JPG, PNG — tự nén trước khi lưu
-        </p>
       </div>
 
-      <form onSubmit={saveProfile} className="space-y-4">
+      <form onSubmit={saveProfile} className="card space-y-5">
         <div>
-          <label className="label">Họ tên hiển thị</label>
-          <input
-            className="input"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
+          <h3 className="font-semibold text-slate-900">Thông tin cá nhân</h3>
+          <p className="text-sm text-slate-500">Cập nhật tên hiển thị trên hệ thống</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 p-4">
-          <h3 className="mb-3 font-medium">Đổi mật khẩu</h3>
-          <div className="space-y-3">
-            <div>
-              <label className="label">Mật khẩu hiện tại</label>
-              <input
-                type="password"
-                className="input"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                autoComplete="current-password"
-              />
-            </div>
-            <div>
-              <label className="label">Mật khẩu mới</label>
-              <input
-                type="password"
-                className="input"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-            </div>
-            <div>
-              <label className="label">Nhập lại mật khẩu mới</label>
-              <input
-                type="password"
-                className="input"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-            </div>
+        <div>
+          <label className="label">Họ tên hiển thị</label>
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+
+        <div className="card-section space-y-3">
+          <h3 className="font-medium text-slate-800">Đổi mật khẩu</h3>
+          <div>
+            <label className="label">Mật khẩu hiện tại</label>
+            <input type="password" className="input" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" />
+          </div>
+          <div>
+            <label className="label">Mật khẩu mới</label>
+            <input type="password" className="input" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" />
+          </div>
+          <div>
+            <label className="label">Nhập lại mật khẩu mới</label>
+            <input type="password" className="input" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" />
           </div>
         </div>
 
-        {message && (
-          <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            {message}
-          </p>
-        )}
-        {error && (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
-        )}
+        <AlertBanner type="success" message={message} onDismiss={() => setMessage("")} />
+        <AlertBanner type="error" message={error} onDismiss={() => setError("")} />
 
         <button type="submit" disabled={loading} className="btn btn-primary w-full sm:w-auto">
           {loading ? "Đang lưu..." : "Lưu thay đổi"}

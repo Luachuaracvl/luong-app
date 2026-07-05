@@ -19,8 +19,7 @@ export async function createPercentageHistory(
       createdAt: FieldValue.serverTimestamp(),
     });
 
-  const created = await ref.get();
-  return { id: created.id, ...(created.data() as PercentageHistoryDoc) };
+  return { id: ref.id, userId, percentage, effectiveFrom: Timestamp.fromDate(toDateOnly(effectiveFrom)) };
 }
 
 export async function findPercentageHistoryByUser(userId: string) {
@@ -32,6 +31,37 @@ export async function findPercentageHistoryByUser(userId: string) {
   return snap.docs
     .map((doc) => ({ id: doc.id, ...(doc.data() as PercentageHistoryDoc) }))
     .sort((a, b) => b.effectiveFrom.toMillis() - a.effectiveFrom.toMillis());
+}
+
+export async function findPercentageHistoryForUsers(userIds: string[]) {
+  const map = new Map<string, Awaited<ReturnType<typeof findPercentageHistoryByUser>>>();
+
+  if (userIds.length === 0) return map;
+
+  const db = getDb();
+  for (let i = 0; i < userIds.length; i += 30) {
+    const chunk = userIds.slice(i, i + 30);
+    const snap = await db
+      .collection(COLLECTION)
+      .where("userId", "in", chunk)
+      .get();
+
+    for (const doc of snap.docs) {
+      const data = doc.data() as PercentageHistoryDoc;
+      const list = map.get(data.userId) ?? [];
+      list.push({ id: doc.id, ...data });
+      map.set(data.userId, list);
+    }
+  }
+
+  for (const [userId, list] of map) {
+    map.set(
+      userId,
+      list.sort((a, b) => b.effectiveFrom.toMillis() - a.effectiveFrom.toMillis())
+    );
+  }
+
+  return map;
 }
 
 export async function getPercentageForDate(userId: string, date: Date) {

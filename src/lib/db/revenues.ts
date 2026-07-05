@@ -27,35 +27,80 @@ export async function upsertRevenue(date: Date, amount: number, note: string | n
   const dateKey = dateToKey(normalized);
   const ref = getDb().collection(COLLECTION).doc(dateKey);
   const existing = await ref.get();
+  const now = FieldValue.serverTimestamp();
 
   if (existing.exists) {
+    const prev = existing.data() as DailyRevenueDoc;
     await ref.update({
       amount,
       note,
-      updatedAt: FieldValue.serverTimestamp(),
+      updatedAt: now,
     });
-  } else {
-    await ref.set({
+    return {
+      id: dateKey,
       dateKey,
-      date: Timestamp.fromDate(normalized),
+      date: prev.date,
       amount,
       note,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+      totalSalary: prev.totalSalary ?? 0,
+      employeeCount: prev.employeeCount ?? 0,
+      createdAt: prev.createdAt,
+      updatedAt: Timestamp.now(),
+      isNew: false,
+      previousAmount: prev.amount,
+    };
   }
 
-  const updated = await ref.get();
-  return { id: updated.id, ...(updated.data() as DailyRevenueDoc) };
+  await ref.set({
+    dateKey,
+    date: Timestamp.fromDate(normalized),
+    amount,
+    note,
+    totalSalary: 0,
+    employeeCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const docDate = Timestamp.fromDate(normalized);
+  return {
+    id: dateKey,
+    dateKey,
+    date: docDate,
+    amount,
+    note,
+    totalSalary: 0,
+    employeeCount: 0,
+    createdAt: docDate,
+    updatedAt: Timestamp.now(),
+    isNew: true,
+    previousAmount: 0,
+  };
+}
+
+export async function updateRevenueTotals(
+  id: string,
+  totalSalary: number,
+  employeeCount: number
+) {
+  await getDb().collection(COLLECTION).doc(id).update({
+    totalSalary,
+    employeeCount,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
 }
 
 export async function listRevenues(limit = 60) {
-  const snap = await getDb().collection(COLLECTION).get();
+  const snap = await getDb()
+    .collection(COLLECTION)
+    .orderBy("dateKey", "desc")
+    .limit(limit)
+    .get();
 
-  return snap.docs
-    .map((doc) => ({ id: doc.id, ...(doc.data() as DailyRevenueDoc) }))
-    .sort((a, b) => b.date.toMillis() - a.date.toMillis())
-    .slice(0, limit);
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as DailyRevenueDoc),
+  }));
 }
 
 export function revenueToJson(revenue: DailyRevenueDoc & { id: string }) {
@@ -66,3 +111,5 @@ export function revenueToJson(revenue: DailyRevenueDoc & { id: string }) {
     note: revenue.note,
   };
 }
+
+export { Timestamp };

@@ -75,3 +75,51 @@ export function downloadCsv(filename: string, rows: string[][]) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+export function getGreeting(name: string): string {
+  const hour = new Date().getHours();
+  const prefix =
+    hour < 12 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
+  return `${prefix}, ${name.split(" ")[0]}`;
+}
+
+export function computeMonthlySummary<
+  T extends { date: string; revenue: number; totalSalary: number; adminNet: number }
+>(stats: T[]) {
+  const map = new Map<
+    string,
+    { revenue: number; salary: number; adminNet: number; days: number }
+  >();
+
+  for (const d of stats) {
+    const key = monthKeyFromDate(d.date);
+    const cur = map.get(key) ?? { revenue: 0, salary: 0, adminNet: 0, days: 0 };
+    cur.revenue += d.revenue;
+    cur.salary += d.totalSalary;
+    cur.adminNet += d.adminNet;
+    cur.days += 1;
+    map.set(key, cur);
+  }
+
+  return Array.from(map.entries())
+    .map(([month, data]) => ({ month, ...data }))
+    .sort((a, b) => b.month.localeCompare(a.month));
+}
+
+export function computeEmployeeMonthlySummary<
+  T extends { date: string; salary: number }
+>(records: T[]) {
+  const map = new Map<string, { salary: number; days: number }>();
+
+  for (const r of records) {
+    const key = monthKeyFromDate(r.date);
+    const cur = map.get(key) ?? { salary: 0, days: 0 };
+    cur.salary += r.salary;
+    cur.days += 1;
+    map.set(key, cur);
+  }
+
+  return Array.from(map.entries())
+    .map(([month, data]) => ({ month, ...data }))
+    .sort((a, b) => b.month.localeCompare(a.month));
+}
