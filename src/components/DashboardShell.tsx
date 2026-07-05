@@ -148,7 +148,7 @@ export function DashboardShell({
           </main>
         </div>
 
-        <nav className="bottom-nav">
+        <nav className="bottom-nav" data-bottom-nav>
           {navItems.map((item) => (
             <button
               key={item.id}

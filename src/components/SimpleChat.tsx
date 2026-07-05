@@ -84,6 +84,10 @@ export function SimpleChat({
 
   useMobileChatViewport(true);
 
+  useEffect(() => {
+    window.dispatchEvent(new Event("resize"));
+  }, [mobileScreen, room]);
+
   const scrollToBottom = useCallback((smooth = true) => {
     bottomRef.current?.scrollIntoView({
       behavior: smooth ? "smooth" : "auto",

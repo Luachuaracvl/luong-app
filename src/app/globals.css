@@ -111,7 +111,37 @@ button {
     height: 100svh;
     max-height: 100svh;
     padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: var(--bottom-nav-height);
+    padding-bottom: 0;
+  }
+
+  body.chat-layout-active .chat-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--bottom-nav-offset, var(--bottom-nav-height));
+    z-index: 35;
+    margin: 0;
+    border-top: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+
+  body.chat-layout-active .chat-messages {
+    padding-bottom: calc(
+      var(--chat-footer-offset, 3.25rem) + var(--bottom-nav-offset, var(--bottom-nav-height))
+    );
+  }
+
+  body.chat-keyboard-open .main-area-full {
+    height: var(--chat-vh, 100svh);
+    max-height: var(--chat-vh, 100svh);
+  }
+
+  body.chat-keyboard-open .chat-footer {
+    bottom: 0;
+  }
+
+  body.chat-keyboard-open .chat-messages {
+    padding-bottom: var(--chat-footer-offset, 3.25rem);
   }
 
   body.chat-layout-active .page-content-full {
@@ -119,12 +149,6 @@ button {
     min-height: 0;
     height: auto !important;
     max-height: none !important;
-  }
-
-  body.chat-keyboard-open .main-area-full {
-    height: var(--chat-vh, 100svh);
-    max-height: var(--chat-vh, 100svh);
-    padding-bottom: 0;
   }
 }
 
@@ -721,11 +745,6 @@ table.data-table tr:last-child td {
   .chat-sidebar-open .chat-sidebar-header {
     @apply px-4 py-2.5;
     background: var(--bg);
-  }
-
-  .chat-footer {
-    background: var(--bg-elevated);
-    flex-shrink: 0;
   }
 
   .chat-input-bar {
