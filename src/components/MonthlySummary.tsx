@@ -28,7 +28,7 @@ export function MonthlySummary({
       {rows.slice(0, 6).map((row) => (
         <div
           key={row.month}
-          className={`summary-month-card ${variant === "salary" ? "summary-month-card-emerald" : ""}`}
+          className="summary-month-card"
         >
           <div className="flex items-center justify-between">
             <p className="font-medium text-fg">{formatMonthLabel(row.month)}</p>

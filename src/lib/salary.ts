@@ -245,6 +245,7 @@ export async function getEmployeeSalarySummary(userId: string) {
   const enriched = records
     .map((r) => ({
       id: r.id,
+      dateKey: r.dateKey,
       date: dateKeyToIso(r.dateKey),
       revenue: r.revenueAmount ?? 0,
       percentageUsed: r.percentageUsed,

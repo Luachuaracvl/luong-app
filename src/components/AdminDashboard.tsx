@@ -703,16 +703,17 @@ export default function AdminDashboard({ user }: { user: User }) {
   const page = PAGE_TITLES[tab];
   const greeting = getGreeting(profileUser.name);
 
-  function renderDayStatActions(d: DayStat) {
+  function renderDayStatActions(d: DayStat, layout: "card" | "inline" = "card") {
+    const rowClass = layout === "inline" ? "record-actions record-actions-inline" : "record-actions";
     return (
-      <div className="btn-row">
-        <button type="button" onClick={() => void openDayDetail(d)} className="btn btn-primary">
+      <div className={rowClass}>
+        <button type="button" onClick={() => void openDayDetail(d)} className="btn btn-primary btn-sm">
           Chi tiết
         </button>
-        <button type="button" onClick={() => startEditRevenue(d)} className="btn btn-secondary">
+        <button type="button" onClick={() => startEditRevenue(d)} className="btn btn-secondary btn-sm">
           Sửa
         </button>
-        <button type="button" onClick={() => deleteRevenueDay(d)} className="btn btn-danger">
+        <button type="button" onClick={() => deleteRevenueDay(d)} className="btn btn-danger btn-sm">
           Xóa
         </button>
       </div>
@@ -882,7 +883,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                           <td className="font-semibold text-success">{formatCurrency(d.totalSalary)}</td>
                           <td className="font-semibold text-fg">{formatCurrency(d.adminNet)}</td>
                           <td>{d.employeeCount}</td>
-                          <td>{renderDayStatActions(d)}</td>
+                          <td>{renderDayStatActions(d, "inline")}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -925,27 +926,27 @@ export default function AdminDashboard({ user }: { user: User }) {
             {dayStats.length === 0 ? (
               <EmptyState title="Chưa có doanh thu" description="Nhập doanh thu đầu tiên ở form bên trái" />
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {dayStats.slice(0, 5).map((d) => (
-                  <div key={d.id} className="list-row">
-                    <div>
-                      <p className="font-semibold text-fg">
+                  <div key={d.id} className="revenue-history-item">
+                    <div className="revenue-history-main">
+                      <div className="min-w-0">
                         <button
                           type="button"
                           onClick={() => void openDayDetail(d)}
-                          className="hover:text-fg hover:underline"
+                          className="text-left text-base font-semibold text-fg hover:underline"
                         >
                           {formatDate(d.date)}
                         </button>
-                      </p>
-                      <p className="text-xs text-muted">
-                        Lương {formatCurrency(d.totalSalary)} · Admin {formatCurrency(d.adminNet)}
-                      </p>
+                        <p className="mt-1 text-xs text-muted">
+                          Lương <span className="text-success">{formatCurrency(d.totalSalary)}</span>
+                          {" · "}
+                          Admin <span className="text-fg">{formatCurrency(d.adminNet)}</span>
+                        </p>
+                      </div>
+                      <p className="revenue-history-amount">{formatCurrency(d.revenue)}</p>
                     </div>
-                    <div className="flex items-center justify-between gap-3 sm:justify-end">
-                      <p className="text-lg font-bold text-fg">{formatCurrency(d.revenue)}</p>
-                      {renderDayStatActions(d)}
-                    </div>
+                    {renderDayStatActions(d)}
                   </div>
                 ))}
               </div>

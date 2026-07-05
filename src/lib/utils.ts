@@ -43,6 +43,16 @@ export function dateToInputValue(date: Date): string {
   return dateToKey(date);
 }
 
+/** Calendar date YYYY-MM-DD in the user's local timezone */
+export function localDateKey(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return dateToKey(toDateOnly(d));
+}
+
+export function isToday(date: Date | string): boolean {
+  return localDateKey(date) === localDateKey(new Date());
+}
+
 export function calculateSalary(revenue: number, percentage: number): number {
   return Math.round((revenue * percentage) / 100);
 }

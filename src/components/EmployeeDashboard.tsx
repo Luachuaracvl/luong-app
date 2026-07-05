@@ -22,6 +22,7 @@ import {
   formatCurrency,
   formatDate,
   getGreeting,
+  isToday,
 } from "@/lib/utils";
 
 type User = {
@@ -73,13 +74,7 @@ export default function EmployeeDashboard({ user }: { user: User }) {
     if (user.avatarUrl) writeAvatar(user.id, user.avatarUrl);
   }, [user.avatarUrl, user.id]);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().slice(0, 10);
-
-  const todaySalary = data?.records.find(
-    (r) => new Date(r.date).toISOString().slice(0, 10) === todayStr
-  );
+  const todaySalary = data?.records.find((r) => isToday(r.date));
 
   const filteredRecords = data ? filterByMonth(data.records, monthFilter) : [];
   const monthlySummary = useMemo(

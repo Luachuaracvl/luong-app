@@ -18,12 +18,12 @@ const ICONS = {
 } as const;
 
 const ACCENT_CLASS = {
-  indigo: { card: "stat-card-violet", icon: "stat-icon-violet" },
-  violet: { card: "stat-card-violet", icon: "stat-icon-violet" },
-  emerald: { card: "stat-card-emerald", icon: "stat-icon-emerald" },
-  amber: { card: "stat-card-amber", icon: "stat-icon-amber" },
-  slate: { card: "stat-card-cyan", icon: "stat-icon-cyan" },
-  cyan: { card: "stat-card-cyan", icon: "stat-icon-cyan" },
+  indigo: { card: "", icon: "stat-icon" },
+  violet: { card: "", icon: "stat-icon" },
+  emerald: { card: "", icon: "stat-icon" },
+  amber: { card: "", icon: "stat-icon" },
+  slate: { card: "", icon: "stat-icon" },
+  cyan: { card: "", icon: "stat-icon" },
 } as const;
 
 export function StatCard({

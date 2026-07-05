@@ -3,20 +3,14 @@
 import { useEffect, useState } from "react";
 import { readAvatar, writeAvatar } from "@/lib/avatar-cache";
 
-const GRADIENTS = [
-  "from-indigo-500 to-violet-600",
-  "from-emerald-500 to-teal-600",
-  "from-amber-500 to-orange-600",
-  "from-rose-500 to-pink-600",
-  "from-cyan-500 to-blue-600",
-];
+const AVATAR_COLORS = ["#3f3f46", "#52525b", "#404040", "#57534e", "#44403c"];
 
-function gradientForName(name: string) {
+function colorForName(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
 export function UserAvatar({
@@ -38,7 +32,7 @@ export function UserAvatar({
         : "h-11 w-11 text-base";
 
   const initial = name.trim().charAt(0).toUpperCase() || "?";
-  const gradient = gradientForName(name);
+  const bgColor = colorForName(name);
 
   const [src, setSrc] = useState<string | null>(() => {
     if (avatarUrl) return avatarUrl;
@@ -61,7 +55,7 @@ export function UserAvatar({
       <img
         src={src}
         alt={name}
-        className={`${sizeClass} shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm`}
+        className={`${sizeClass} shrink-0 rounded-full object-cover ring-1 ring-[var(--border-strong)]`}
         onError={() => {
           setSrc(null);
           if (userId) writeAvatar(userId, null);
@@ -72,7 +66,8 @@ export function UserAvatar({
 
   return (
     <div
-      className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${gradient} font-semibold text-white ring-2 ring-white shadow-sm`}
+      className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full font-medium text-white`}
+      style={{ backgroundColor: bgColor }}
     >
       {initial}
     </div>
