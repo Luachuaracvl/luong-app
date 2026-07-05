@@ -109,6 +109,15 @@ export function DashboardShell({
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2 lg:hidden">
+              <button
+                type="button"
+                onClick={logout}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-red-50 hover:text-red-600"
+                aria-label="Đăng xuất"
+                title="Đăng xuất"
+              >
+                <IconLogout className="h-5 w-5" />
+              </button>
               <UserAvatar name={user.name} avatarUrl={user.avatarUrl} userId={user.id} size="sm" />
             </div>
             {headerAction && (

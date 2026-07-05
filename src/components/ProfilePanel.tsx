@@ -352,6 +352,20 @@ export function ProfilePanel({
             {loading ? "Đang xử lý..." : "Đổi mật khẩu"}
           </button>
           </form>
+
+          <div className="card card-section lg:hidden">
+            <p className="mb-3 text-sm text-slate-600">Thoát tài khoản trên thiết bị này</p>
+            <button
+              type="button"
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST" });
+                window.location.href = "/login";
+              }}
+              className="btn btn-danger w-full"
+            >
+              Đăng xuất
+            </button>
+          </div>
         </div>
       </div>
     </div>
