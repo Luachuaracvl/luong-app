@@ -670,7 +670,7 @@ table.data-table tr:last-child td {
 
 /* Chat */
 .chat-app {
-  @apply flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden;
+  @apply flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden lg:flex-row;
   background: var(--bg);
 }
 
@@ -717,20 +717,23 @@ table.data-table tr:last-child td {
 }
 
 .chat-shell {
-  @apply hidden h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex;
+  @apply h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden;
+  display: none;
   background: var(--bg);
 }
 
 .chat-shell-open {
-  @apply flex h-full min-h-0 flex-col overflow-hidden;
+  display: flex;
+}
+
+@media (min-width: 1024px) {
+  .chat-shell {
+    display: flex;
+  }
 }
 
 .chat-header {
-  @apply flex shrink-0 items-center gap-2;
-  padding-left: max(1rem, var(--safe-left));
-  padding-right: max(1rem, var(--safe-right));
-  padding-top: calc(var(--safe-top-measured) + 0.5rem);
-  padding-bottom: 0.5rem;
+  @apply flex shrink-0 items-center gap-2 px-4 py-2.5;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
   z-index: 30;
@@ -742,16 +745,21 @@ table.data-table tr:last-child td {
     position: sticky;
     top: 0;
     flex-shrink: 0;
+    padding-left: max(1rem, var(--safe-left));
+    padding-right: max(1rem, var(--safe-right));
+    padding-top: calc(var(--safe-top-measured, 0px) + 0.5rem);
+    padding-bottom: 0.5rem;
+    background: var(--bg);
   }
 }
 
 @media (min-width: 1024px) {
   .chat-header {
-    @apply px-4 py-2.5;
-    padding-top: 0.625rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
     background: var(--bg-elevated);
+  }
+
+  .chat-sidebar-header {
+    @apply px-4 py-3;
   }
 }
 
@@ -759,7 +767,7 @@ table.data-table tr:last-child td {
   .chat-sidebar-open .chat-sidebar-header {
     padding-left: max(1rem, var(--safe-left));
     padding-right: max(1rem, var(--safe-right));
-    padding-top: calc(var(--safe-top-measured) + 0.5rem);
+    padding-top: calc(var(--safe-top-measured, 0px) + 0.5rem);
     padding-bottom: 0.5rem;
     background: var(--bg);
   }
@@ -784,6 +792,12 @@ table.data-table tr:last-child td {
 .chat-messages {
   @apply min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-y-contain px-3 py-3 sm:px-4;
   -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 1024px) {
+  .chat-messages {
+    padding-bottom: 0;
+  }
 }
 
 .chat-bubble-row {
